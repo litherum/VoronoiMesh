@@ -8,6 +8,7 @@
 
 #import "GameViewController.h"
 
+#import <CGAL/HalfedgeDS_vector.h>
 #import <CGAL/Polyhedron_3.h>
 #import <CGAL/Polyhedron_incremental_builder_3.h>
 #pragma clang diagnostic push
@@ -17,11 +18,10 @@
 #import <ply.h>
 #import <boost/functional/hash.hpp>
 #import <cassert>
-#import <map>
 #import <vector>
 
 typedef CGAL::Simple_cartesian<float> Kernel;
-typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
+typedef CGAL::Polyhedron_3<Kernel, CGAL::Polyhedron_items_3, CGAL::HalfedgeDS_vector> Polyhedron;
 
 @implementation GameViewController
 
@@ -56,9 +56,6 @@ private:
                 static_cast<int>(reinterpret_cast<char*>(&(faceList.numVertices)) - reinterpret_cast<char*>(&faceList))}
         };
 
-        CGAL::Polyhedron_incremental_builder_3<Polyhedron::HalfedgeDS> incrementalBuilder(halfedgeDS, true);
-        incrementalBuilder.begin_surface(0, 0);
-
         typedef typename Polyhedron::HalfedgeDS::Vertex Vertex;
         typedef Vertex::Point Point;
         
@@ -69,9 +66,15 @@ private:
         PlyFile* plyFile = ply_open_for_reading(const_cast<char*>(m_filename.c_str()), &nElems, &elemNames, &fileType, &version);
         assert(plyFile);
         
+        CGAL::Polyhedron_incremental_builder_3<Polyhedron::HalfedgeDS> incrementalBuilder(halfedgeDS, true);
+        int nProps;
+        int numFacets;
+        ply_get_element_description(plyFile, const_cast<char*>("vertex"), &nElems, &nProps);
+        ply_get_element_description(plyFile, const_cast<char*>("face"), &numFacets, &nProps);
+        incrementalBuilder.begin_surface(nElems, numFacets);
+        
         ply_get_element_setup(plyFile, const_cast<char*>("vertex"), sizeof(vertexProperties) / sizeof(PlyProperty), vertexProperties);
         
-        int nProps;
         ply_get_element_description(plyFile, const_cast<char*>("vertex"), &nElems, &nProps);
         
         for (int i = 0; i < nElems; ++i) {
@@ -143,10 +146,7 @@ Polyhedron buildModel(std::string filename) {
 
     std::vector<SCNVector3> vertexPositions;
     std::vector<SCNVector3> vertexNormals;
-    std::map<Polyhedron::Vertex_const_iterator, size_t> iteratorToIndexMap;
     for (auto vertexIterator = model.vertices_begin(); vertexIterator != model.vertices_end(); ++vertexIterator) {
-        iteratorToIndexMap.insert(std::make_pair(vertexIterator, vertexPositions.size()));
-
         auto& point = vertexIterator->point();
         vertexPositions.push_back(SCNVector3Make(point.x(), point.y(), point.z()));
 
@@ -173,9 +173,7 @@ Polyhedron buildModel(std::string filename) {
     for (auto facetIterator = model.facets_begin(); facetIterator != model.facets_end(); ++facetIterator) {
         auto facetCirculator = facetIterator->facet_begin();
         do {
-            auto indexIterator = iteratorToIndexMap.find(facetCirculator->vertex());
-            assert(indexIterator != iteratorToIndexMap.end());
-            vertexIndices.push_back(static_cast<int>(indexIterator->second));
+            vertexIndices.push_back(static_cast<int>(facetCirculator->vertex() - model.vertices_begin()));
             ++facetCirculator;
         } while (facetCirculator != facetIterator->facet_begin());
     }
