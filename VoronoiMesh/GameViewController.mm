@@ -18,7 +18,6 @@
 #import <boost/functional/hash.hpp>
 #import <cassert>
 #import <map>
-#import <unordered_set>
 #import <vector>
 
 typedef CGAL::Simple_cartesian<float> Kernel;
@@ -84,19 +83,16 @@ private:
         ply_get_element_setup(plyFile, const_cast<char*>("face"), sizeof(faceProperties) / sizeof(PlyProperty), faceProperties);
         
         ply_get_element_description(plyFile, const_cast<char*>("face"), &nElems, &nProps);
-        
-        std::unordered_set<int> problemTriangles;
+
         for (int i = 0; i < nElems; ++i) {
             ply_get_element(plyFile, &faceList);
             assert(faceList.numVertices == 3); // We only know how to render triangles
 
-            if (incrementalBuilder.test_facet(faceList.vertexIds, faceList.vertexIds + faceList.numVertices))
-                incrementalBuilder.add_facet(faceList.vertexIds, faceList.vertexIds + faceList.numVertices);
-            else {
-                for (int i = 0; i < faceList.numVertices / 2; ++i)
-                    std::swap(faceList.vertexIds[i], faceList.vertexIds[faceList.numVertices - 1 - i]);
-                if (incrementalBuilder.test_facet(faceList.vertexIds, faceList.vertexIds + faceList.numVertices))
-                    incrementalBuilder.add_facet(faceList.vertexIds, faceList.vertexIds + faceList.numVertices);
+            if (incrementalBuilder.test_facet(faceList.vertexIds, faceList.vertexIds + faceList.numVertices)) {
+                auto handle = incrementalBuilder.add_facet(faceList.vertexIds, faceList.vertexIds + faceList.numVertices);
+                handle->facet()->plane() = Polyhedron::Plane_3(handle->vertex()->point(),
+                                                               handle->next()->vertex()->point(),
+                                                               handle->next()->next()->vertex()->point());
             }
         }
 
@@ -162,16 +158,9 @@ Polyhedron buildModel(std::string filename) {
                 break;
             auto facet = vertexCirculator->facet();
             if (facet != Polyhedron::Face_handle()) {
-                assert(facet->is_triangle());
-                auto facetCirculator = facet->facet_begin();
-                auto p1 = facetCirculator->vertex()->point();
-                ++facetCirculator;
-                auto p2 = facetCirculator->vertex()->point();
-                ++facetCirculator;
-                auto p3 = facetCirculator->vertex()->point();
-                auto crossProduct = CGAL::cross_product(p2 - p1, p3 - p1);
-                crossProduct = crossProduct / std::sqrt(crossProduct.squared_length());
-                averagedNormal = averagedNormal + crossProduct;
+                auto normal = facet->plane().orthogonal_vector();
+                normal = normal / std::sqrt(normal.squared_length());
+                averagedNormal = averagedNormal + normal;
                 ++count;
             }
             ++vertexCirculator;
@@ -203,8 +192,8 @@ Polyhedron buildModel(std::string filename) {
     SCNMaterial *redMaterial = [SCNMaterial material];
     redMaterial.ambient.contents = [NSColor darkGrayColor];
     redMaterial.diffuse.contents = [NSColor blueColor];
-    redMaterial.specular.contents = [NSColor whiteColor];
-    redMaterial.shininess = 50;
+    redMaterial.specular.contents = [NSColor darkGrayColor];
+    redMaterial.shininess = 0.1;
     redMaterial.lightingModelName = SCNLightingModelPhong;
     redMaterial.doubleSided = YES;
     bunnyGeometry.materials = [NSArray arrayWithObjects:redMaterial, nil];
@@ -218,7 +207,7 @@ Polyhedron buildModel(std::string filename) {
     // animate the 3d object
     CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"rotation"];
     animation.toValue = [NSValue valueWithSCNVector4:SCNVector4Make(0, 1, 0, M_PI*2)];
-    animation.duration = 5;
+    animation.duration = 9;
     animation.repeatCount = MAXFLOAT; //repeat forever
     [bunnyNode addAnimation:animation forKey:nil];
 
