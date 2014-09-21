@@ -1,0 +1,429 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		C28D37EA19CE7B57002DD0E9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C28D37E919CE7B57002DD0E9 /* main.m */; };
+		C28D37ED19CE7B57002DD0E9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = C28D37EC19CE7B57002DD0E9 /* AppDelegate.m */; };
+		C28D37F019CE7B57002DD0E9 /* GameView.m in Sources */ = {isa = PBXBuildFile; fileRef = C28D37EF19CE7B57002DD0E9 /* GameView.m */; };
+		C28D37F319CE7B57002DD0E9 /* GameViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C28D37F219CE7B57002DD0E9 /* GameViewController.m */; };
+		C28D37F519CE7B57002DD0E9 /* art.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = C28D37F419CE7B57002DD0E9 /* art.scnassets */; };
+		C28D37F719CE7B57002DD0E9 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C28D37F619CE7B57002DD0E9 /* Images.xcassets */; };
+		C28D37FA19CE7B57002DD0E9 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = C28D37F819CE7B57002DD0E9 /* MainMenu.xib */; };
+		C28D380619CE7B57002DD0E9 /* VoronoiMeshTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C28D380519CE7B57002DD0E9 /* VoronoiMeshTests.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C28D380019CE7B57002DD0E9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C28D37DC19CE7B57002DD0E9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C28D37E319CE7B57002DD0E9;
+			remoteInfo = VoronoiMesh;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		C28D37E419CE7B57002DD0E9 /* VoronoiMesh.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoronoiMesh.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C28D37E819CE7B57002DD0E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C28D37E919CE7B57002DD0E9 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		C28D37EB19CE7B57002DD0E9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		C28D37EC19CE7B57002DD0E9 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		C28D37EE19CE7B57002DD0E9 /* GameView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GameView.h; sourceTree = "<group>"; };
+		C28D37EF19CE7B57002DD0E9 /* GameView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GameView.m; sourceTree = "<group>"; };
+		C28D37F119CE7B57002DD0E9 /* GameViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GameViewController.h; sourceTree = "<group>"; };
+		C28D37F219CE7B57002DD0E9 /* GameViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GameViewController.m; sourceTree = "<group>"; };
+		C28D37F419CE7B57002DD0E9 /* art.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = art.scnassets; sourceTree = "<group>"; };
+		C28D37F619CE7B57002DD0E9 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		C28D37F919CE7B57002DD0E9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		C28D37FF19CE7B57002DD0E9 /* VoronoiMeshTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoronoiMeshTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C28D380419CE7B57002DD0E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C28D380519CE7B57002DD0E9 /* VoronoiMeshTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VoronoiMeshTests.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C28D37E119CE7B57002DD0E9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C28D37FC19CE7B57002DD0E9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		C28D37DB19CE7B56002DD0E9 = {
+			isa = PBXGroup;
+			children = (
+				C28D37E619CE7B57002DD0E9 /* VoronoiMesh */,
+				C28D380219CE7B57002DD0E9 /* VoronoiMeshTests */,
+				C28D37E519CE7B57002DD0E9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C28D37E519CE7B57002DD0E9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C28D37E419CE7B57002DD0E9 /* VoronoiMesh.app */,
+				C28D37FF19CE7B57002DD0E9 /* VoronoiMeshTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C28D37E619CE7B57002DD0E9 /* VoronoiMesh */ = {
+			isa = PBXGroup;
+			children = (
+				C28D37EB19CE7B57002DD0E9 /* AppDelegate.h */,
+				C28D37EC19CE7B57002DD0E9 /* AppDelegate.m */,
+				C28D37EE19CE7B57002DD0E9 /* GameView.h */,
+				C28D37EF19CE7B57002DD0E9 /* GameView.m */,
+				C28D37F119CE7B57002DD0E9 /* GameViewController.h */,
+				C28D37F219CE7B57002DD0E9 /* GameViewController.m */,
+				C28D37F419CE7B57002DD0E9 /* art.scnassets */,
+				C28D37F619CE7B57002DD0E9 /* Images.xcassets */,
+				C28D37F819CE7B57002DD0E9 /* MainMenu.xib */,
+				C28D37E719CE7B57002DD0E9 /* Supporting Files */,
+			);
+			path = VoronoiMesh;
+			sourceTree = "<group>";
+		};
+		C28D37E719CE7B57002DD0E9 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				C28D37E819CE7B57002DD0E9 /* Info.plist */,
+				C28D37E919CE7B57002DD0E9 /* main.m */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		C28D380219CE7B57002DD0E9 /* VoronoiMeshTests */ = {
+			isa = PBXGroup;
+			children = (
+				C28D380519CE7B57002DD0E9 /* VoronoiMeshTests.m */,
+				C28D380319CE7B57002DD0E9 /* Supporting Files */,
+			);
+			path = VoronoiMeshTests;
+			sourceTree = "<group>";
+		};
+		C28D380319CE7B57002DD0E9 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				C28D380419CE7B57002DD0E9 /* Info.plist */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C28D37E319CE7B57002DD0E9 /* VoronoiMesh */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C28D380919CE7B57002DD0E9 /* Build configuration list for PBXNativeTarget "VoronoiMesh" */;
+			buildPhases = (
+				C28D37E019CE7B57002DD0E9 /* Sources */,
+				C28D37E119CE7B57002DD0E9 /* Frameworks */,
+				C28D37E219CE7B57002DD0E9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VoronoiMesh;
+			productName = VoronoiMesh;
+			productReference = C28D37E419CE7B57002DD0E9 /* VoronoiMesh.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C28D37FE19CE7B57002DD0E9 /* VoronoiMeshTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C28D380C19CE7B57002DD0E9 /* Build configuration list for PBXNativeTarget "VoronoiMeshTests" */;
+			buildPhases = (
+				C28D37FB19CE7B57002DD0E9 /* Sources */,
+				C28D37FC19CE7B57002DD0E9 /* Frameworks */,
+				C28D37FD19CE7B57002DD0E9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C28D380119CE7B57002DD0E9 /* PBXTargetDependency */,
+			);
+			name = VoronoiMeshTests;
+			productName = VoronoiMeshTests;
+			productReference = C28D37FF19CE7B57002DD0E9 /* VoronoiMeshTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C28D37DC19CE7B57002DD0E9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0600;
+				ORGANIZATIONNAME = Litherum;
+				TargetAttributes = {
+					C28D37E319CE7B57002DD0E9 = {
+						CreatedOnToolsVersion = 6.0.1;
+					};
+					C28D37FE19CE7B57002DD0E9 = {
+						CreatedOnToolsVersion = 6.0.1;
+						TestTargetID = C28D37E319CE7B57002DD0E9;
+					};
+				};
+			};
+			buildConfigurationList = C28D37DF19CE7B57002DD0E9 /* Build configuration list for PBXProject "VoronoiMesh" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = C28D37DB19CE7B56002DD0E9;
+			productRefGroup = C28D37E519CE7B57002DD0E9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C28D37E319CE7B57002DD0E9 /* VoronoiMesh */,
+				C28D37FE19CE7B57002DD0E9 /* VoronoiMeshTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C28D37E219CE7B57002DD0E9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C28D37F519CE7B57002DD0E9 /* art.scnassets in Resources */,
+				C28D37F719CE7B57002DD0E9 /* Images.xcassets in Resources */,
+				C28D37FA19CE7B57002DD0E9 /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C28D37FD19CE7B57002DD0E9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C28D37E019CE7B57002DD0E9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C28D37F319CE7B57002DD0E9 /* GameViewController.m in Sources */,
+				C28D37F019CE7B57002DD0E9 /* GameView.m in Sources */,
+				C28D37ED19CE7B57002DD0E9 /* AppDelegate.m in Sources */,
+				C28D37EA19CE7B57002DD0E9 /* main.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C28D37FB19CE7B57002DD0E9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C28D380619CE7B57002DD0E9 /* VoronoiMeshTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C28D380119CE7B57002DD0E9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C28D37E319CE7B57002DD0E9 /* VoronoiMesh */;
+			targetProxy = C28D380019CE7B57002DD0E9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		C28D37F819CE7B57002DD0E9 /* MainMenu.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C28D37F919CE7B57002DD0E9 /* Base */,
+			);
+			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		C28D380719CE7B57002DD0E9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		C28D380819CE7B57002DD0E9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		C28D380A19CE7B57002DD0E9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = VoronoiMesh/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		C28D380B19CE7B57002DD0E9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = VoronoiMesh/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		C28D380D19CE7B57002DD0E9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = VoronoiMeshTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoronoiMesh.app/Contents/MacOS/VoronoiMesh";
+			};
+			name = Debug;
+		};
+		C28D380E19CE7B57002DD0E9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = VoronoiMeshTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoronoiMesh.app/Contents/MacOS/VoronoiMesh";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C28D37DF19CE7B57002DD0E9 /* Build configuration list for PBXProject "VoronoiMesh" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C28D380719CE7B57002DD0E9 /* Debug */,
+				C28D380819CE7B57002DD0E9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C28D380919CE7B57002DD0E9 /* Build configuration list for PBXNativeTarget "VoronoiMesh" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C28D380A19CE7B57002DD0E9 /* Debug */,
+				C28D380B19CE7B57002DD0E9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		C28D380C19CE7B57002DD0E9 /* Build configuration list for PBXNativeTarget "VoronoiMeshTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C28D380D19CE7B57002DD0E9 /* Debug */,
+				C28D380E19CE7B57002DD0E9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C28D37DC19CE7B57002DD0E9 /* Project object */;
+}
