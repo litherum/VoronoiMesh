@@ -10,11 +10,17 @@
 		C28D37EA19CE7B57002DD0E9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C28D37E919CE7B57002DD0E9 /* main.m */; };
 		C28D37ED19CE7B57002DD0E9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = C28D37EC19CE7B57002DD0E9 /* AppDelegate.m */; };
 		C28D37F019CE7B57002DD0E9 /* GameView.m in Sources */ = {isa = PBXBuildFile; fileRef = C28D37EF19CE7B57002DD0E9 /* GameView.m */; };
-		C28D37F319CE7B57002DD0E9 /* GameViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C28D37F219CE7B57002DD0E9 /* GameViewController.m */; };
+		C28D37F319CE7B57002DD0E9 /* GameViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = C28D37F219CE7B57002DD0E9 /* GameViewController.mm */; };
 		C28D37F519CE7B57002DD0E9 /* art.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = C28D37F419CE7B57002DD0E9 /* art.scnassets */; };
 		C28D37F719CE7B57002DD0E9 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C28D37F619CE7B57002DD0E9 /* Images.xcassets */; };
 		C28D37FA19CE7B57002DD0E9 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = C28D37F819CE7B57002DD0E9 /* MainMenu.xib */; };
 		C28D380619CE7B57002DD0E9 /* VoronoiMeshTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C28D380519CE7B57002DD0E9 /* VoronoiMeshTests.m */; };
+		C28D381019CE7FFD002DD0E9 /* libCGAL.10.0.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C28D380F19CE7FFD002DD0E9 /* libCGAL.10.0.3.dylib */; };
+		C28D381219CE80C0002DD0E9 /* libply.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C28D381119CE80C0002DD0E9 /* libply.a */; };
+		C28D381819CE869A002DD0E9 /* bun_zipper_res2.ply in Resources */ = {isa = PBXBuildFile; fileRef = C28D381419CE869A002DD0E9 /* bun_zipper_res2.ply */; };
+		C28D381919CE869A002DD0E9 /* bun_zipper_res3.ply in Resources */ = {isa = PBXBuildFile; fileRef = C28D381519CE869A002DD0E9 /* bun_zipper_res3.ply */; };
+		C28D381A19CE869A002DD0E9 /* bun_zipper_res4.ply in Resources */ = {isa = PBXBuildFile; fileRef = C28D381619CE869A002DD0E9 /* bun_zipper_res4.ply */; };
+		C28D381B19CE869A002DD0E9 /* bun_zipper.ply in Resources */ = {isa = PBXBuildFile; fileRef = C28D381719CE869A002DD0E9 /* bun_zipper.ply */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,13 +42,19 @@
 		C28D37EE19CE7B57002DD0E9 /* GameView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GameView.h; sourceTree = "<group>"; };
 		C28D37EF19CE7B57002DD0E9 /* GameView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GameView.m; sourceTree = "<group>"; };
 		C28D37F119CE7B57002DD0E9 /* GameViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GameViewController.h; sourceTree = "<group>"; };
-		C28D37F219CE7B57002DD0E9 /* GameViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GameViewController.m; sourceTree = "<group>"; };
+		C28D37F219CE7B57002DD0E9 /* GameViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = GameViewController.mm; sourceTree = "<group>"; };
 		C28D37F419CE7B57002DD0E9 /* art.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = art.scnassets; sourceTree = "<group>"; };
 		C28D37F619CE7B57002DD0E9 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		C28D37F919CE7B57002DD0E9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		C28D37FF19CE7B57002DD0E9 /* VoronoiMeshTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoronoiMeshTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C28D380419CE7B57002DD0E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C28D380519CE7B57002DD0E9 /* VoronoiMeshTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VoronoiMeshTests.m; sourceTree = "<group>"; };
+		C28D380F19CE7FFD002DD0E9 /* libCGAL.10.0.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.10.0.3.dylib; path = ../../../../opt/local/lib/libCGAL.10.0.3.dylib; sourceTree = "<group>"; };
+		C28D381119CE80C0002DD0E9 /* libply.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libply.a; path = "../../Downloads/ply-1.1/libply.a"; sourceTree = "<group>"; };
+		C28D381419CE869A002DD0E9 /* bun_zipper_res2.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bun_zipper_res2.ply; sourceTree = "<group>"; };
+		C28D381519CE869A002DD0E9 /* bun_zipper_res3.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bun_zipper_res3.ply; sourceTree = "<group>"; };
+		C28D381619CE869A002DD0E9 /* bun_zipper_res4.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bun_zipper_res4.ply; sourceTree = "<group>"; };
+		C28D381719CE869A002DD0E9 /* bun_zipper.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bun_zipper.ply; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,6 +62,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C28D381219CE80C0002DD0E9 /* libply.a in Frameworks */,
+				C28D381019CE7FFD002DD0E9 /* libCGAL.10.0.3.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,6 +80,8 @@
 		C28D37DB19CE7B56002DD0E9 = {
 			isa = PBXGroup;
 			children = (
+				C28D381119CE80C0002DD0E9 /* libply.a */,
+				C28D380F19CE7FFD002DD0E9 /* libCGAL.10.0.3.dylib */,
 				C28D37E619CE7B57002DD0E9 /* VoronoiMesh */,
 				C28D380219CE7B57002DD0E9 /* VoronoiMeshTests */,
 				C28D37E519CE7B57002DD0E9 /* Products */,
@@ -84,12 +100,13 @@
 		C28D37E619CE7B57002DD0E9 /* VoronoiMesh */ = {
 			isa = PBXGroup;
 			children = (
+				C28D381319CE864E002DD0E9 /* PLY Models */,
 				C28D37EB19CE7B57002DD0E9 /* AppDelegate.h */,
 				C28D37EC19CE7B57002DD0E9 /* AppDelegate.m */,
 				C28D37EE19CE7B57002DD0E9 /* GameView.h */,
 				C28D37EF19CE7B57002DD0E9 /* GameView.m */,
 				C28D37F119CE7B57002DD0E9 /* GameViewController.h */,
-				C28D37F219CE7B57002DD0E9 /* GameViewController.m */,
+				C28D37F219CE7B57002DD0E9 /* GameViewController.mm */,
 				C28D37F419CE7B57002DD0E9 /* art.scnassets */,
 				C28D37F619CE7B57002DD0E9 /* Images.xcassets */,
 				C28D37F819CE7B57002DD0E9 /* MainMenu.xib */,
@@ -122,6 +139,17 @@
 				C28D380419CE7B57002DD0E9 /* Info.plist */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		C28D381319CE864E002DD0E9 /* PLY Models */ = {
+			isa = PBXGroup;
+			children = (
+				C28D381419CE869A002DD0E9 /* bun_zipper_res2.ply */,
+				C28D381519CE869A002DD0E9 /* bun_zipper_res3.ply */,
+				C28D381619CE869A002DD0E9 /* bun_zipper_res4.ply */,
+				C28D381719CE869A002DD0E9 /* bun_zipper.ply */,
+			);
+			name = "PLY Models";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -204,9 +232,13 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C28D381919CE869A002DD0E9 /* bun_zipper_res3.ply in Resources */,
 				C28D37F519CE7B57002DD0E9 /* art.scnassets in Resources */,
 				C28D37F719CE7B57002DD0E9 /* Images.xcassets in Resources */,
+				C28D381A19CE869A002DD0E9 /* bun_zipper_res4.ply in Resources */,
+				C28D381B19CE869A002DD0E9 /* bun_zipper.ply in Resources */,
 				C28D37FA19CE7B57002DD0E9 /* MainMenu.xib in Resources */,
+				C28D381819CE869A002DD0E9 /* bun_zipper_res2.ply in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -224,7 +256,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C28D37F319CE7B57002DD0E9 /* GameViewController.m in Sources */,
+				C28D37F319CE7B57002DD0E9 /* GameViewController.mm in Sources */,
 				C28D37F019CE7B57002DD0E9 /* GameView.m in Sources */,
 				C28D37ED19CE7B57002DD0E9 /* AppDelegate.m in Sources */,
 				C28D37EA19CE7B57002DD0E9 /* main.m in Sources */,
@@ -342,9 +374,22 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					/opt/local/include,
+					"/Users/litherum/Downloads/ply-1.1",
+				);
 				INFOPLIST_FILE = VoronoiMesh/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/local/lib,
+					"/Users/litherum/Downloads/ply-1.1",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				WARNING_CFLAGS = "-Wall";
 			};
 			name = Debug;
 		};
@@ -353,9 +398,22 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					/opt/local/include,
+					"/Users/litherum/Downloads/ply-1.1",
+				);
 				INFOPLIST_FILE = VoronoiMesh/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/local/lib,
+					"/Users/litherum/Downloads/ply-1.1",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				WARNING_CFLAGS = "-Wall";
 			};
 			name = Release;
 		};
