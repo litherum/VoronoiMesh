@@ -92,6 +92,12 @@ private:
 
             if (incrementalBuilder.test_facet(faceList.vertexIds, faceList.vertexIds + faceList.numVertices))
                 incrementalBuilder.add_facet(faceList.vertexIds, faceList.vertexIds + faceList.numVertices);
+            else {
+                for (int i = 0; i < faceList.numVertices / 2; ++i)
+                    std::swap(faceList.vertexIds[i], faceList.vertexIds[faceList.numVertices - 1 - i]);
+                if (incrementalBuilder.test_facet(faceList.vertexIds, faceList.vertexIds + faceList.numVertices))
+                    incrementalBuilder.add_facet(faceList.vertexIds, faceList.vertexIds + faceList.numVertices);
+            }
         }
 
         incrementalBuilder.end_surface();
@@ -129,7 +135,7 @@ Polyhedron buildModel(std::string filename) {
     SCNNode *lightNode = [SCNNode node];
     lightNode.light = [SCNLight light];
     lightNode.light.type = SCNLightTypeOmni;
-    lightNode.position = SCNVector3Make(0, 3, 3);
+    lightNode.position = SCNVector3Make(2, 2, 5);
     [scene.rootNode addChildNode:lightNode];
     
     // create and add an ambient light to the scene
@@ -140,11 +146,38 @@ Polyhedron buildModel(std::string filename) {
     [scene.rootNode addChildNode:ambientLightNode];
 
     std::vector<SCNVector3> vertexPositions;
+    std::vector<SCNVector3> vertexNormals;
     std::map<Polyhedron::Vertex_const_iterator, size_t> iteratorToIndexMap;
     for (auto vertexIterator = model.vertices_begin(); vertexIterator != model.vertices_end(); ++vertexIterator) {
         iteratorToIndexMap.insert(std::make_pair(vertexIterator, vertexPositions.size()));
+
         auto& point = vertexIterator->point();
-        vertexPositions.push_back(SCNVector3Make(point.x() * 10, point.y() * 10, point.z() * 10));
+        vertexPositions.push_back(SCNVector3Make(point.x(), point.y(), point.z()));
+
+        CGAL::Vector_3<Kernel> averagedNormal(0, 0, 0);
+        int count = 0;
+        auto vertexCirculator = vertexIterator->vertex_begin();
+        do {
+            if (vertexCirculator == Polyhedron::Halfedge_around_vertex_circulator())
+                break;
+            auto facet = vertexCirculator->facet();
+            if (facet != Polyhedron::Face_handle()) {
+                assert(facet->is_triangle());
+                auto facetCirculator = facet->facet_begin();
+                auto p1 = facetCirculator->vertex()->point();
+                ++facetCirculator;
+                auto p2 = facetCirculator->vertex()->point();
+                ++facetCirculator;
+                auto p3 = facetCirculator->vertex()->point();
+                auto crossProduct = CGAL::cross_product(p2 - p1, p3 - p1);
+                crossProduct = crossProduct / std::sqrt(crossProduct.squared_length());
+                averagedNormal = averagedNormal + crossProduct;
+                ++count;
+            }
+            ++vertexCirculator;
+        } while (vertexCirculator != vertexIterator->vertex_begin());
+        averagedNormal = averagedNormal / count;
+        vertexNormals.push_back(SCNVector3Make(averagedNormal.x(), averagedNormal.y(), averagedNormal.z()));
     }
 
     std::vector<int> vertexIndices;
@@ -159,26 +192,33 @@ Polyhedron buildModel(std::string filename) {
     }
     SCNGeometry *bunnyGeometry = [SCNGeometry
                                   geometryWithSources:[NSArray arrayWithObjects:[SCNGeometrySource geometrySourceWithVertices:vertexPositions.data()
-                                                                                                                        count:vertexPositions.size()], nil]
+                                                                                                                        count:vertexPositions.size()],
+                                                                                [SCNGeometrySource geometrySourceWithNormals:vertexNormals.data()
+                                                                                                                       count:vertexNormals.size()], nil]
                                   elements:[NSArray arrayWithObjects:[SCNGeometryElement geometryElementWithData:[NSData dataWithBytes:vertexIndices.data() length:vertexIndices.size() * sizeof(int)]
                                                                                                    primitiveType:SCNGeometryPrimitiveTypeTriangles
                                                                                                   primitiveCount:model.size_of_facets()
                                                                                                    bytesPerIndex:sizeof(int)], nil]];
 
     SCNMaterial *redMaterial = [SCNMaterial material];
-    redMaterial.diffuse.contents = [NSColor redColor];
-    redMaterial.ambient.contents = [NSColor redColor];
+    redMaterial.ambient.contents = [NSColor darkGrayColor];
+    redMaterial.diffuse.contents = [NSColor blueColor];
+    redMaterial.specular.contents = [NSColor whiteColor];
+    redMaterial.shininess = 50;
+    redMaterial.lightingModelName = SCNLightingModelPhong;
     redMaterial.doubleSided = YES;
     bunnyGeometry.materials = [NSArray arrayWithObjects:redMaterial, nil];
 
     SCNNode *bunnyNode = [SCNNode node];
     bunnyNode.geometry = bunnyGeometry;
+    bunnyNode.scale = SCNVector3Make(20, 20, 20);
+    bunnyNode.position = SCNVector3Make(0, -2, 0);
     [scene.rootNode addChildNode:bunnyNode];
 
     // animate the 3d object
     CABasicAnimation *animation = [CABasicAnimation animationWithKeyPath:@"rotation"];
     animation.toValue = [NSValue valueWithSCNVector4:SCNVector4Make(0, 1, 0, M_PI*2)];
-    animation.duration = 3;
+    animation.duration = 5;
     animation.repeatCount = MAXFLOAT; //repeat forever
     [bunnyNode addAnimation:animation forKey:nil];
 
