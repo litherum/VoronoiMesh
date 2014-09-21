@@ -178,23 +178,23 @@ Polyhedron buildModel(std::string filename) {
         } while (facetCirculator != facetIterator->facet_begin());
     }
     SCNGeometry *bunnyGeometry = [SCNGeometry
-                                  geometryWithSources:[NSArray arrayWithObjects:[SCNGeometrySource geometrySourceWithVertices:vertexPositions.data()
-                                                                                                                        count:vertexPositions.size()],
-                                                                                [SCNGeometrySource geometrySourceWithNormals:vertexNormals.data()
-                                                                                                                       count:vertexNormals.size()], nil]
-                                  elements:[NSArray arrayWithObjects:[SCNGeometryElement geometryElementWithData:[NSData dataWithBytes:vertexIndices.data() length:vertexIndices.size() * sizeof(int)]
-                                                                                                   primitiveType:SCNGeometryPrimitiveTypeTriangles
-                                                                                                  primitiveCount:model.size_of_facets()
-                                                                                                   bytesPerIndex:sizeof(int)], nil]];
+                                  geometryWithSources:@[[SCNGeometrySource geometrySourceWithVertices:vertexPositions.data()
+                                                                                                count:vertexPositions.size()],
+                                                        [SCNGeometrySource geometrySourceWithNormals:vertexNormals.data()
+                                                                                               count:vertexNormals.size()]]
+                                  elements:@[[SCNGeometryElement geometryElementWithData:[NSData dataWithBytes:vertexIndices.data() length:vertexIndices.size() * sizeof(int)]
+                                                                           primitiveType:SCNGeometryPrimitiveTypeTriangles
+                                                                          primitiveCount:model.size_of_facets()
+                                                                           bytesPerIndex:sizeof(int)]]];
 
-    SCNMaterial *redMaterial = [SCNMaterial material];
-    redMaterial.ambient.contents = [NSColor darkGrayColor];
-    redMaterial.diffuse.contents = [NSColor blueColor];
-    redMaterial.specular.contents = [NSColor darkGrayColor];
-    redMaterial.shininess = 0.1;
-    redMaterial.lightingModelName = SCNLightingModelPhong;
-    redMaterial.doubleSided = YES;
-    bunnyGeometry.materials = [NSArray arrayWithObjects:redMaterial, nil];
+    SCNMaterial *bunnyMaterial = [SCNMaterial material];
+    bunnyMaterial.ambient.contents = [NSColor darkGrayColor];
+    bunnyMaterial.diffuse.contents = [NSColor blueColor];
+    bunnyMaterial.specular.contents = [NSColor darkGrayColor];
+    bunnyMaterial.shininess = 0.1;
+    bunnyMaterial.lightingModelName = SCNLightingModelBlinn;
+    bunnyMaterial.shaderModifiers = @{SCNShaderModifierEntryPointSurface: @"_surface.diffuse += vec4((sin(_surface.position.x * 10) + 1) / 6, 0, 0, 1);"};
+    bunnyGeometry.materials = @[bunnyMaterial];
 
     SCNNode *bunnyNode = [SCNNode node];
     bunnyNode.geometry = bunnyGeometry;
