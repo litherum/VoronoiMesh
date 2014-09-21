@@ -118,7 +118,7 @@ Polyhedron buildModel(std::string filename) {
 
 -(void)awakeFromNib
 {
-    Polyhedron model = buildModel(std::string([[[NSBundle mainBundle] pathForResource:@"bun_zipper" ofType:@"ply"] UTF8String]));
+    const Polyhedron model = buildModel(std::string([[[NSBundle mainBundle] pathForResource:@"bun_zipper" ofType:@"ply"] UTF8String]));
     // create a new scene
     SCNScene *scene = [SCNScene scene];
 
@@ -147,7 +147,7 @@ Polyhedron buildModel(std::string filename) {
     std::vector<SCNVector3> vertexPositions;
     std::vector<SCNVector3> vertexNormals;
     for (auto vertexIterator = model.vertices_begin(); vertexIterator != model.vertices_end(); ++vertexIterator) {
-        auto& point = vertexIterator->point();
+        const auto& point = vertexIterator->point();
         vertexPositions.push_back(SCNVector3Make(point.x(), point.y(), point.z()));
 
         CGAL::Vector_3<Kernel> averagedNormal(0, 0, 0);
@@ -156,7 +156,7 @@ Polyhedron buildModel(std::string filename) {
         do {
             if (vertexCirculator == Polyhedron::Halfedge_around_vertex_circulator())
                 break;
-            auto facet = vertexCirculator->facet();
+            const auto& facet = vertexCirculator->facet();
             if (facet != Polyhedron::Face_handle()) {
                 auto normal = facet->plane().orthogonal_vector();
                 normal = normal / std::sqrt(normal.squared_length());
