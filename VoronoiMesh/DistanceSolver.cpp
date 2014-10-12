@@ -21,8 +21,6 @@ enum class PredecessorType {
     Vertex
 };
 
-struct CandidateInterval;
-
 struct CandidateInterval {
     CandidateInterval()
     {
@@ -41,22 +39,12 @@ struct CandidateInterval {
     {
     }
 
-private:
-    struct FrontierPointVisitor : boost::static_visitor<CGAL::Point_3<Kernel>> {
-        CGAL::Point_3<Kernel> operator()(const CGAL::Point_3<Kernel>& point) const {
-            return point;
-        }
+    CGAL::Point_3<Kernel> frontierPoint() const;
 
-        CGAL::Point_3<Kernel> operator()(Polyhedron::Vertex_const_handle handle) const {
-            return handle->point();
-        }
-    };
+private:
+    class FrontierPointVisitor;
 
 public:
-    CGAL::Point_3<Kernel> frontierPoint() const {
-        return boost::apply_visitor(FrontierPointVisitor(), c);
-    }
-
     // Extent
     float a;
     float b;
@@ -71,35 +59,15 @@ public:
     }
 };
 
-struct EventType {
-    virtual ~EventType() { }
-};
-
-struct CandidateIntervalEvent : public EventType {
-    CandidateIntervalEvent(const std::set<CandidateInterval>::iterator& candidateInterval)
-        : candidateInterval(candidateInterval)
-    {
-    }
-    const std::set<CandidateInterval>::iterator candidateInterval;
-};
-
-struct VertexEvent : public EventType {
-    VertexEvent(const Polyhedron::Vertex_const_handle& vertex)
-        : vertex(vertex)
-    {
-    }
-    const Polyhedron::Vertex_const_handle vertex;
-};
-
 struct Event {
     Event(float label, const Polyhedron::Vertex_const_handle& vertex)
         : label(label)
-        , eventType(new VertexEvent(vertex))
+        , eventData(new boost::variant<std::set<CandidateInterval>::iterator, Polyhedron::Vertex_const_handle>(vertex))
     {
     }
     Event(float label, const std::set<CandidateInterval>::iterator& candidateInterval)
         : label(label)
-        , eventType(new CandidateIntervalEvent(candidateInterval))
+        , eventData(new boost::variant<std::set<CandidateInterval>::iterator, Polyhedron::Vertex_const_handle>(candidateInterval))
     {
     }
     bool operator<(const Event& other) const {
@@ -107,7 +75,7 @@ struct Event {
     }
 
     float label;
-    std::shared_ptr<EventType> eventType;
+    std::shared_ptr<boost::variant<std::set<CandidateInterval>::iterator, Polyhedron::Vertex_const_handle>> eventData;
 };
 
 class ModelPreprocessor {
@@ -116,6 +84,7 @@ public:
     void preprocessModel();
 private:
     class PropagateVisitor;
+    class EventLoopEventVisitor;
 
     std::set<CandidateInterval>::iterator insertInterval(CandidateInterval&&, const CGAL::Point_3<Kernel>& c, std::set<CandidateInterval>& edgeIntervals);
     void deleteInterval(std::set<CandidateInterval>::iterator, std::set<CandidateInterval>& edgeIntervals);
@@ -125,39 +94,54 @@ private:
     const std::vector<InitialPoint>& initialPoints;
     std::map<Polyhedron::Halfedge_const_handle, std::set<CandidateInterval>> halfedgeIntervalMap;
     std::set<Event> eventQueue;
-    std::map<std::shared_ptr<EventType>, float> permanentLabels;
+    std::map<std::shared_ptr<boost::variant<std::set<CandidateInterval>::iterator, Polyhedron::Vertex_const_handle>>, float> permanentLabels;
 };
 
+class CandidateInterval::FrontierPointVisitor : public boost::static_visitor<CGAL::Point_3<Kernel>> {
+public:
+    CGAL::Point_3<Kernel> operator()(const CGAL::Point_3<Kernel>& point) const {
+        return point;
+    }
+
+    CGAL::Point_3<Kernel> operator()(Polyhedron::Vertex_const_handle handle) const {
+        return handle->point();
+    }
+};
+
+CGAL::Point_3<Kernel> CandidateInterval::frontierPoint() const {
+    return boost::apply_visitor(FrontierPointVisitor(), c);
+}
 
 ModelPreprocessor::ModelPreprocessor(const Polyhedron&, const std::vector<InitialPoint>& initialPoints)
     : initialPoints(initialPoints)
 {
 }
 
-void ModelPreprocessor::deleteInterval(std::set<CandidateInterval>::iterator item, std::set<CandidateInterval>& edgeIntervals) {
-    if (eventQueue.size() > 1) {
-        auto trailingIter = eventQueue.begin();
-        std::set<Event>::iterator leadingIter = trailingIter;
-        for (++leadingIter; leadingIter != eventQueue.end(); ++trailingIter, ++leadingIter) {
-            while (leadingIter != eventQueue.end()) {
-                if (auto* candidateInterval = dynamic_cast<CandidateIntervalEvent*>(leadingIter->eventType.get())) {
-                    if (candidateInterval->candidateInterval != item)
-                        continue;
-                    eventQueue.erase(leadingIter);
-                    leadingIter = trailingIter;
-                    ++leadingIter;
-                }
-            }
-            if (leadingIter == eventQueue.end())
-                break;
-        }
+class DeleteEventVisitor : public boost::static_visitor<bool> {
+public:
+    DeleteEventVisitor(std::set<CandidateInterval>::iterator item)
+        : item(item)
+    {
     }
-    if (!eventQueue.empty()) {
-        auto beginningItem = eventQueue.begin();
-        if (auto* candidateInterval = dynamic_cast<CandidateIntervalEvent*>(beginningItem->eventType.get())) {
-            if (candidateInterval->candidateInterval == item)
-                eventQueue.erase(beginningItem);
-        }
+
+    bool operator()(std::set<CandidateInterval>::iterator i) const {
+        return i == item;
+    }
+
+    bool operator()(Polyhedron::Vertex_const_handle) const {
+        return false;
+    }
+
+private:
+    std::set<CandidateInterval>::iterator item;
+};
+
+void ModelPreprocessor::deleteInterval(std::set<CandidateInterval>::iterator item, std::set<CandidateInterval>& edgeIntervals) {
+    for (auto i = eventQueue.begin(); i != eventQueue.end(); ++i) {
+        if (boost::apply_visitor(DeleteEventVisitor(item), *(i->eventData)))
+            i = eventQueue.erase(i);
+        else
+            ++i;
     }
 
     edgeIntervals.erase(item);
@@ -311,26 +295,8 @@ static Polyhedron::Halfedge_around_vertex_const_circulator facetBetaLiesWithin(P
 }
 
 static float projectFrac(CGAL::Vector_3<Kernel> of, CGAL::Vector_3<Kernel> onto) {
+    // FIXME: Might be able to use CGAL::Line_3<Kernel>::projection() instead
     return of * onto / onto.squared_length();
-}
-
-static CandidateInterval createCandidateIntervalOverEntireEdge(Polyhedron::Halfedge_const_handle halfedge, CGAL::Point_3<Kernel> root) {
-    auto triangleVertexToRoot = root - halfedge->vertex()->point();
-    auto halfedgeVector = endVertex(halfedge)->point() - halfedge->vertex()->point();
-    auto advanceFrac = projectFrac(triangleVertexToRoot, halfedgeVector);
-
-    CGAL::Point_3<Kernel> frontierPoint;
-
-    CandidateInterval candidateInterval;
-    if (advanceFrac <= 0)
-        candidateInterval = CandidateInterval(0, 1, halfedge, root, root, 0, halfedge->vertex(), root);
-    else if (advanceFrac >= 1)
-        candidateInterval = CandidateInterval(0, 1, halfedge, root, root, 0, endVertex(halfedge), root);
-    else {
-        frontierPoint = halfedge->vertex()->point() + halfedgeVector * advanceFrac;
-        candidateInterval = CandidateInterval(0, 1, halfedge, root, root, 0, frontierPoint, root);
-    }
-    return candidateInterval;
 }
 
 static std::vector<Polyhedron::Halfedge_const_handle> oppositeEdgesThatNeedCandidateIntervals(Polyhedron::Vertex_const_handle vertex, CGAL::Point_3<Kernel> beta) {
@@ -376,6 +342,25 @@ static std::vector<Polyhedron::Halfedge_const_handle> oppositeEdgesThatNeedCandi
     return result;
 }
 
+static CandidateInterval createCandidateIntervalOverEntireEdge(Polyhedron::Halfedge_const_handle halfedge, CGAL::Point_3<Kernel> root) {
+    auto triangleVertexToRoot = root - halfedge->vertex()->point();
+    auto halfedgeVector = endVertex(halfedge)->point() - halfedge->vertex()->point();
+    auto advanceFrac = projectFrac(triangleVertexToRoot, halfedgeVector);
+
+    CGAL::Point_3<Kernel> frontierPoint;
+
+    CandidateInterval candidateInterval;
+    if (advanceFrac <= 0)
+        candidateInterval = CandidateInterval(0, 1, halfedge, root, root, 0, halfedge->vertex(), root);
+    else if (advanceFrac >= 1)
+        candidateInterval = CandidateInterval(0, 1, halfedge, root, root, 0, endVertex(halfedge), root);
+    else {
+        frontierPoint = halfedge->vertex()->point() + halfedgeVector * advanceFrac;
+        candidateInterval = CandidateInterval(0, 1, halfedge, root, root, 0, frontierPoint, root);
+    }
+    return candidateInterval;
+}
+
 class ModelPreprocessor::PropagateVisitor : public boost::static_visitor<> {
 public:
     PropagateVisitor(ModelPreprocessor& modelPreprocessor, const CandidateInterval& i)
@@ -389,15 +374,14 @@ public:
         assert(facetCirculator->opposite() == i.halfedge);
         for (++facetCirculator; facetCirculator != i.halfedge->facet_begin(); ++facetCirculator) {
             Polyhedron::Halfedge_const_handle halfedge = facetCirculator;
-            boost::optional<CandidateInterval> ii = modelPreprocessor.project(i, halfedge);
-            if (ii)
-                modelPreprocessor.insertInterval(std::move(*ii), c, modelPreprocessor.halfedgeIntervalMap.emplace(halfedge, std::set<CandidateInterval>()).first->second);
+            if (boost::optional<CandidateInterval> ii = modelPreprocessor.project(i, halfedge))
+                modelPreprocessor.insertInterval(std::move(*ii), i.rBar, modelPreprocessor.halfedgeIntervalMap.emplace(halfedge, std::set<CandidateInterval>()).first->second);
         }
     }
 
     void operator()(Polyhedron::Vertex_const_handle c) const {
         for (auto halfedge : oppositeEdgesThatNeedCandidateIntervals(c, i.beta)) {
-            // FIXME: Second argument is probably wrong
+            // FIXME: createCandidateIntervalOverEntireEdge might be doing the wrong thing here
             modelPreprocessor.insertInterval(createCandidateIntervalOverEntireEdge(halfedge, c->point()), c->point(), modelPreprocessor.halfedgeIntervalMap.emplace(halfedge, std::set<CandidateInterval>()).first->second);
         }
     }
@@ -410,6 +394,24 @@ private:
 void ModelPreprocessor::propagate(const std::set<CandidateInterval>::iterator i) {
     boost::apply_visitor(PropagateVisitor(*this, *i), i->c);
 }
+
+class ModelPreprocessor::EventLoopEventVisitor : public boost::static_visitor<> {
+public:
+    EventLoopEventVisitor(ModelPreprocessor& modelPreprocessor)
+        : modelPreprocessor(modelPreprocessor)
+    {
+    }
+
+    void operator()(std::set<CandidateInterval>::iterator candidateInterval) const {
+        modelPreprocessor.propagate(candidateInterval);
+    }
+
+    void operator()(Polyhedron::Vertex_const_handle) const {
+    }
+
+private:
+    ModelPreprocessor& modelPreprocessor;
+};
 
 void ModelPreprocessor::preprocessModel() {
     for (const auto& initialPoint : initialPoints) {
@@ -429,9 +431,8 @@ void ModelPreprocessor::preprocessModel() {
 
     while (!eventQueue.empty()) {
         auto eventIter = eventQueue.begin();
-        const auto& event = permanentLabels.emplace(eventIter->eventType, eventIter->label).first->first;
-        if (auto* candidateInterval = dynamic_cast<CandidateIntervalEvent*>(event.get()))
-            propagate(candidateInterval->candidateInterval);
+        const auto& event = permanentLabels.emplace(eventIter->eventData, eventIter->label).first->first;
+        boost::apply_visitor(EventLoopEventVisitor(*this), *event);
         eventQueue.erase(eventIter);
     }
 }
