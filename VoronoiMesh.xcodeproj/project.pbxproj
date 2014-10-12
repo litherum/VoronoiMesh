@@ -21,6 +21,8 @@
 		C28D381919CE869A002DD0E9 /* bun_zipper_res3.ply in Resources */ = {isa = PBXBuildFile; fileRef = C28D381519CE869A002DD0E9 /* bun_zipper_res3.ply */; };
 		C28D381A19CE869A002DD0E9 /* bun_zipper_res4.ply in Resources */ = {isa = PBXBuildFile; fileRef = C28D381619CE869A002DD0E9 /* bun_zipper_res4.ply */; };
 		C28D381B19CE869A002DD0E9 /* bun_zipper.ply in Resources */ = {isa = PBXBuildFile; fileRef = C28D381719CE869A002DD0E9 /* bun_zipper.ply */; };
+		C28D382119CFB2A2002DD0E9 /* ModelBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C28D381F19CFB2A2002DD0E9 /* ModelBuilder.cpp */; };
+		C28D382419CFB499002DD0E9 /* DistanceSolver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C28D382219CFB499002DD0E9 /* DistanceSolver.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,6 +57,10 @@
 		C28D381519CE869A002DD0E9 /* bun_zipper_res3.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bun_zipper_res3.ply; sourceTree = "<group>"; };
 		C28D381619CE869A002DD0E9 /* bun_zipper_res4.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bun_zipper_res4.ply; sourceTree = "<group>"; };
 		C28D381719CE869A002DD0E9 /* bun_zipper.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bun_zipper.ply; sourceTree = "<group>"; };
+		C28D381F19CFB2A2002DD0E9 /* ModelBuilder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModelBuilder.cpp; sourceTree = "<group>"; };
+		C28D382019CFB2A2002DD0E9 /* ModelBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ModelBuilder.h; sourceTree = "<group>"; };
+		C28D382219CFB499002DD0E9 /* DistanceSolver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DistanceSolver.cpp; sourceTree = "<group>"; };
+		C28D382319CFB499002DD0E9 /* DistanceSolver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DistanceSolver.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +117,10 @@
 				C28D37F619CE7B57002DD0E9 /* Images.xcassets */,
 				C28D37F819CE7B57002DD0E9 /* MainMenu.xib */,
 				C28D37E719CE7B57002DD0E9 /* Supporting Files */,
+				C28D381F19CFB2A2002DD0E9 /* ModelBuilder.cpp */,
+				C28D382019CFB2A2002DD0E9 /* ModelBuilder.h */,
+				C28D382219CFB499002DD0E9 /* DistanceSolver.cpp */,
+				C28D382319CFB499002DD0E9 /* DistanceSolver.h */,
 			);
 			path = VoronoiMesh;
 			sourceTree = "<group>";
@@ -257,9 +267,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				C28D37F319CE7B57002DD0E9 /* GameViewController.mm in Sources */,
+				C28D382419CFB499002DD0E9 /* DistanceSolver.cpp in Sources */,
 				C28D37F019CE7B57002DD0E9 /* GameView.m in Sources */,
 				C28D37ED19CE7B57002DD0E9 /* AppDelegate.m in Sources */,
 				C28D37EA19CE7B57002DD0E9 /* main.m in Sources */,
+				C28D382119CFB2A2002DD0E9 /* ModelBuilder.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

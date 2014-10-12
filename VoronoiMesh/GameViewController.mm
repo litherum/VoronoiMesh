@@ -8,117 +8,34 @@
 
 #import "GameViewController.h"
 
-#import <CGAL/HalfedgeDS_vector.h>
-#import <CGAL/Polyhedron_3.h>
-#import <CGAL/Polyhedron_incremental_builder_3.h>
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wconditional-uninitialized"
-#import <CGAL/Simple_cartesian.h>
-#pragma clang diagnostic pop
-#import <ply.h>
-#import <boost/functional/hash.hpp>
-#import <cassert>
-#import <vector>
+#import "DistanceSolver.h"
+#import "ModelBuilder.h"
 
-typedef CGAL::Simple_cartesian<float> Kernel;
-typedef CGAL::Polyhedron_3<Kernel, CGAL::Polyhedron_items_3, CGAL::HalfedgeDS_vector> Polyhedron;
+#import <vector>
 
 @implementation GameViewController
 
-class BuildModel : public CGAL::Modifier_base<Polyhedron::HalfedgeDS> {
-public:
-    BuildModel(std::string filename)
-        : m_filename(filename)
-    {
-        
-    }
-    
-private:
-    virtual void operator()(Polyhedron::HalfedgeDS& halfedgeDS) override {
-        float vec[3];
-        FaceList faceList;
-        PlyProperty vertexProperties[] = {
-            {const_cast<char*>("x"), PLY_START_TYPE, PLY_FLOAT,
-                static_cast<int>(reinterpret_cast<char*>(&(vec[0])) - reinterpret_cast<char*>(&vec)),
-                PLY_SCALAR, PLY_START_TYPE, PLY_START_TYPE, 0},
-            {const_cast<char*>("y"), PLY_START_TYPE, PLY_FLOAT,
-                static_cast<int>(reinterpret_cast<char*>(&(vec[1])) - reinterpret_cast<char*>(&vec)),
-                PLY_SCALAR, PLY_START_TYPE, PLY_START_TYPE, 0},
-            {const_cast<char*>("z"), PLY_START_TYPE, PLY_FLOAT,
-                static_cast<int>(reinterpret_cast<char*>(&(vec[2])) - reinterpret_cast<char*>(&vec)),
-                PLY_SCALAR, PLY_START_TYPE, PLY_START_TYPE, 0}
-        };
-        
-        PlyProperty faceProperties[] = {
-            {const_cast<char*>("vertex_indices"), PLY_START_TYPE, PLY_INT,
-                static_cast<int>(reinterpret_cast<char*>(&(faceList.vertexIds)) - reinterpret_cast<char*>(&faceList)),
-                1, PLY_START_TYPE, PLY_CHAR,
-                static_cast<int>(reinterpret_cast<char*>(&(faceList.numVertices)) - reinterpret_cast<char*>(&faceList))}
-        };
-
-        typedef typename Polyhedron::HalfedgeDS::Vertex Vertex;
-        typedef Vertex::Point Point;
-        
-        int nElems;
-        char** elemNames;
-        int fileType;
-        float version;
-        PlyFile* plyFile = ply_open_for_reading(const_cast<char*>(m_filename.c_str()), &nElems, &elemNames, &fileType, &version);
-        assert(plyFile);
-        
-        CGAL::Polyhedron_incremental_builder_3<Polyhedron::HalfedgeDS> incrementalBuilder(halfedgeDS, true);
-        int nProps;
-        int numFacets;
-        ply_get_element_description(plyFile, const_cast<char*>("vertex"), &nElems, &nProps);
-        ply_get_element_description(plyFile, const_cast<char*>("face"), &numFacets, &nProps);
-        incrementalBuilder.begin_surface(nElems, numFacets);
-        
-        ply_get_element_setup(plyFile, const_cast<char*>("vertex"), sizeof(vertexProperties) / sizeof(PlyProperty), vertexProperties);
-        
-        ply_get_element_description(plyFile, const_cast<char*>("vertex"), &nElems, &nProps);
-        
-        for (int i = 0; i < nElems; ++i) {
-            ply_get_element(plyFile, vec);
-            incrementalBuilder.add_vertex(Point(vec[0], vec[1], vec[2]));
-        }
-        
-        // Faces
-        ply_get_element_setup(plyFile, const_cast<char*>("face"), sizeof(faceProperties) / sizeof(PlyProperty), faceProperties);
-        
-        ply_get_element_description(plyFile, const_cast<char*>("face"), &nElems, &nProps);
-
-        for (int i = 0; i < nElems; ++i) {
-            ply_get_element(plyFile, &faceList);
-            assert(faceList.numVertices == 3); // We only know how to render triangles
-
-            if (incrementalBuilder.test_facet(faceList.vertexIds, faceList.vertexIds + faceList.numVertices)) {
-                auto handle = incrementalBuilder.add_facet(faceList.vertexIds, faceList.vertexIds + faceList.numVertices);
-                handle->facet()->plane() = Polyhedron::Plane_3(handle->vertex()->point(),
-                                                               handle->next()->vertex()->point(),
-                                                               handle->next()->next()->vertex()->point());
-            }
-        }
-
-        incrementalBuilder.end_surface();
-        ply_close(plyFile);
-    }
-    struct FaceList {
-        int* vertexIds;
-        char numVertices;
-    };
-    std::string m_filename;
-};
-
-Polyhedron buildModel(std::string filename) {
-    Polyhedron polyhedron;
-    BuildModel buildModel(filename);
-    polyhedron.delegate(buildModel);
-    return polyhedron;
+static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
+    CGAL::Vector_3<Kernel> result(0, 0, 0);
+    auto circulator = facet->facet_begin();
+    do {
+        result = result + (circulator->vertex()->point() - CGAL::Point_3<Kernel>(0, 0, 0));
+        ++circulator;
+    } while (circulator != facet->facet_begin());
+    return CGAL::Point_3<Kernel>(0, 0, 0) + (result / facet->facet_degree());
 }
 
 -(void)awakeFromNib
 {
     const Polyhedron model = buildModel(std::string([[[NSBundle mainBundle] pathForResource:@"bun_zipper" ofType:@"ply"] UTF8String]));
+
+    {
+        std::vector<InitialPoint> initialPoints;
+        Polyhedron::Facet_const_handle facet = model.facets_begin();
+        initialPoints.push_back(InitialPoint(facet, facetCenter(facet)));
+        preprocessModel(model, initialPoints);
+    }
+
     // create a new scene
     SCNScene *scene = [SCNScene scene];
 
@@ -157,12 +74,14 @@ Polyhedron buildModel(std::string filename) {
             if (vertexCirculator == Polyhedron::Halfedge_around_vertex_circulator())
                 break;
             const auto& facet = vertexCirculator->facet();
-            if (facet != Polyhedron::Face_handle()) {
-                auto normal = facet->plane().orthogonal_vector();
-                normal = normal / std::sqrt(normal.squared_length());
-                averagedNormal = averagedNormal + normal;
-                ++count;
+            if (facet == Polyhedron::Face_handle()) {
+                ++vertexCirculator;
+                continue;
             }
+            auto normal = facet->plane().orthogonal_vector();
+            normal = normal / std::sqrt(normal.squared_length());
+            averagedNormal = averagedNormal + normal;
+            ++count;
             ++vertexCirculator;
         } while (vertexCirculator != vertexIterator->vertex_begin());
         averagedNormal = averagedNormal / count;
