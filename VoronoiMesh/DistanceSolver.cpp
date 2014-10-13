@@ -16,10 +16,12 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/vector_angle.hpp>
 
-enum class PredecessorType {
-    CandidateInterval,
-    Vertex
-};
+static Polyhedron::Vertex_const_handle endVertex(Polyhedron::Halfedge_const_handle halfedge) {
+    auto facetCirculator = halfedge->facet_begin();
+    assert(Polyhedron::Halfedge_const_handle(facetCirculator) == halfedge);
+    ++facetCirculator;
+    return facetCirculator->vertex();
+}
 
 struct CandidateInterval {
     CandidateInterval()
@@ -39,6 +41,27 @@ struct CandidateInterval {
     {
     }
 
+    CGAL::Point_3<Kernel> aPoint() const {
+        auto point = halfedge->vertex()->point();
+        auto vector = endVertex(halfedge)->point() - point;
+        return point + a * vector;
+    }
+
+    CGAL::Point_3<Kernel> bPoint() const {
+        auto point = halfedge->vertex()->point();
+        auto vector = endVertex(halfedge)->point() - point;
+        return point + b * vector;
+    }
+
+    bool operator<(const CandidateInterval& other) const {
+        // FIXME: This doesn't work for obtuse triangles
+        auto point = halfedge->vertex()->point();
+        auto line = CGAL::Line_3<Kernel>(point, endVertex(halfedge)->point());
+        auto projected1 = line.projection(beta);
+        auto projected2 = line.projection(other.beta);
+        return (projected1 - point).squared_length() < (projected2 - point).squared_length();
+    }
+
     CGAL::Point_3<Kernel> frontierPoint() const;
 
 private:
@@ -54,22 +77,15 @@ public:
     float d; // Depth
     boost::variant<CGAL::Point_3<Kernel>, Polyhedron::Vertex_const_handle> c; // Frontier point
     CGAL::Point_3<Kernel> beta; // Access point
-    bool operator<(const CandidateInterval& other) const {
-        return a < other.a;
-    }
 };
 
 struct Event {
-    Event(float label, const Polyhedron::Vertex_const_handle& vertex)
+    Event(float label, boost::variant<std::set<CandidateInterval>::iterator, Polyhedron::Vertex_const_handle> data)
         : label(label)
-        , eventData(new boost::variant<std::set<CandidateInterval>::iterator, Polyhedron::Vertex_const_handle>(vertex))
+        , eventData(new boost::variant<std::set<CandidateInterval>::iterator, Polyhedron::Vertex_const_handle>(data))
     {
     }
-    Event(float label, const std::set<CandidateInterval>::iterator& candidateInterval)
-        : label(label)
-        , eventData(new boost::variant<std::set<CandidateInterval>::iterator, Polyhedron::Vertex_const_handle>(candidateInterval))
-    {
-    }
+
     bool operator<(const Event& other) const {
         return label < other.label;
     }
@@ -87,7 +103,7 @@ private:
     class EventLoopEventVisitor;
 
     std::set<CandidateInterval>::iterator insertInterval(CandidateInterval&&, const CGAL::Point_3<Kernel>& c, std::set<CandidateInterval>& edgeIntervals);
-    void deleteInterval(std::set<CandidateInterval>::iterator, std::set<CandidateInterval>& edgeIntervals);
+    std::set<CandidateInterval>::iterator deleteInterval(std::set<CandidateInterval>::iterator, std::set<CandidateInterval>& edgeIntervals);
     void propagate(const std::set<CandidateInterval>::iterator);
     boost::optional<CandidateInterval> project(const CandidateInterval& i, Polyhedron::Halfedge_const_handle ii) const;
 
@@ -136,7 +152,7 @@ private:
     std::set<CandidateInterval>::iterator item;
 };
 
-void ModelPreprocessor::deleteInterval(std::set<CandidateInterval>::iterator item, std::set<CandidateInterval>& edgeIntervals) {
+std::set<CandidateInterval>::iterator ModelPreprocessor::deleteInterval(std::set<CandidateInterval>::iterator item, std::set<CandidateInterval>& edgeIntervals) {
     for (auto i = eventQueue.begin(); i != eventQueue.end(); ++i) {
         if (boost::apply_visitor(DeleteEventVisitor(item), *(i->eventData)))
             i = eventQueue.erase(i);
@@ -144,43 +160,7 @@ void ModelPreprocessor::deleteInterval(std::set<CandidateInterval>::iterator ite
             ++i;
     }
 
-    edgeIntervals.erase(item);
-}
-
-std::set<CandidateInterval>::iterator ModelPreprocessor::insertInterval(CandidateInterval&& i, const CGAL::Point_3<Kernel>& c, std::set<CandidateInterval>& edgeIntervals) {
-    // FIXME: Write this function
-    while (!edgeIntervals.empty())
-        deleteInterval(edgeIntervals.begin(), edgeIntervals);
-    return edgeIntervals.emplace(std::forward<CandidateInterval>(i)).first;
-}
-
-static Polyhedron::Vertex_const_handle endVertex(Polyhedron::Halfedge_const_handle halfedge) {
-    auto facetCirculator = halfedge->facet_begin();
-    assert(Polyhedron::Halfedge_const_handle(facetCirculator) == halfedge);
-    ++facetCirculator;
-    return facetCirculator->vertex();
-}
-
-/*static CGAL::Vector_3<Kernel> unitize(CGAL::Vector_3<Kernel> x) {
-    return x / std::sqrt(x.squared_length());
-}*/
-
-static float angle(CGAL::Vector_3<Kernel> v1, CGAL::Vector_3<Kernel> v2) {
-    auto u1 = glm::normalize(glm::vec3(v1.x(), v1.y(), v1.z()));
-    auto u2 = glm::normalize(glm::vec3(v2.x(), v2.y(), v2.z()));
-    return glm::angle(u1, u2);
-    //return std::acos(unitize(v1) * unitize(v2));
-}
-
-static float fractionFromIntersection(CGAL::Point_3<Kernel> intersection, CGAL::Point_3<Kernel> point, CGAL::Vector_3<Kernel> vector) {
-    return std::sqrt((intersection - point).squared_length()) / std::sqrt(vector.squared_length());
-}
-
-static float calculateFrontierPointFrac(Polyhedron::Halfedge_const_handle ei, float a, float b, CGAL::Point_3<Kernel> unfoldedRoot) {
-    auto eiEndVertexPoint = endVertex(ei)->point();
-    auto projected = CGAL::Line_3<Kernel>(ei->vertex()->point(), eiEndVertexPoint).projection(unfoldedRoot);
-    auto frac = std::sqrt((projected - ei->vertex()->point()).squared_length()) / std::sqrt((eiEndVertexPoint - ei->vertex()->point()).squared_length());
-    return glm::clamp(frac, a, b);
+    return edgeIntervals.erase(item);
 }
 
 static CGAL::Point_3<Kernel> calculateAccessPoint(Polyhedron::Halfedge_const_handle halfedge, float frontierPointFrac, CGAL::Point_3<Kernel> unfoldedRoot, CGAL::Point_3<Kernel> oldBeta) {
@@ -207,6 +187,129 @@ static CGAL::Point_3<Kernel> calculateAccessPoint(Polyhedron::Halfedge_const_han
     return CGAL::Point_3<Kernel>(0, 0, 0);
 }
 
+/*static CGAL::Vector_3<Kernel> unitize(CGAL::Vector_3<Kernel> x) {
+    return x / std::sqrt(x.squared_length());
+}*/
+
+static float angle(CGAL::Vector_3<Kernel> v1, CGAL::Vector_3<Kernel> v2) {
+    auto u1 = glm::normalize(glm::vec3(v1.x(), v1.y(), v1.z()));
+    auto u2 = glm::normalize(glm::vec3(v2.x(), v2.y(), v2.z()));
+    return glm::angle(u1, u2);
+    //return std::acos(unitize(v1) * unitize(v2));
+}
+
+CGAL::Point_3<Kernel> calculateTiePoint(const CandidateInterval& interval1, const CandidateInterval& interval2) {
+    // Hyperbola. https://people.richland.edu/james/lecture/m116/conics/hypdef.html
+    //float a = (interval1.d - interval2.d) / 2;
+    //float b = ((interval1.rBar - interval2.rBar) / 2).squared_length() - a * a;
+
+    // FIXME: Write this function
+    assert(interval1.halfedge == interval2.halfedge);
+    return CGAL::Point_3<Kernel>(0, 0, 0);
+}
+
+static float calculateFrontierPointFrac(Polyhedron::Halfedge_const_handle ei, float a, float b, CGAL::Point_3<Kernel> unfoldedRoot) {
+    auto eiEndVertexPoint = endVertex(ei)->point();
+    auto projected = CGAL::Line_3<Kernel>(ei->vertex()->point(), eiEndVertexPoint).projection(unfoldedRoot);
+    auto frac = std::sqrt((projected - ei->vertex()->point()).squared_length()) / std::sqrt((eiEndVertexPoint - ei->vertex()->point()).squared_length());
+    return glm::clamp(frac, a, b);
+}
+
+static void updateCAndBeta(CandidateInterval& interval) {
+    auto point = interval.halfedge->vertex()->point();
+    auto nextPoint = endVertex(interval.halfedge)->point();
+    auto vector = nextPoint - point;
+
+    auto frontierPointFrac = calculateFrontierPointFrac(interval.halfedge, interval.a, interval.b, interval.rBar);
+    if (frontierPointFrac == 0)
+        interval.c = interval.halfedge->vertex();
+    else if (frontierPointFrac == 1)
+        interval.c = endVertex(interval.halfedge);
+    else
+        interval.c = point + vector * frontierPointFrac;
+    interval.beta = calculateAccessPoint(interval.halfedge, frontierPointFrac, interval.rBar, interval.beta);
+}
+
+static void trimAtTiePoint(const CandidateInterval& iter, CandidateInterval& i, float CandidateInterval::*v1, float CandidateInterval::*v2) {
+    assert(iter.halfedge == i.halfedge);
+
+    auto point = i.halfedge->vertex()->point();
+    auto nextPoint = endVertex(i.halfedge)->point();
+    auto vector = nextPoint - point;
+
+    auto a = calculateTiePoint(iter, i);
+    auto frac = std::sqrt((a - point).squared_length()) / std::sqrt(vector.squared_length());
+    if (frac >= iter.a && frac <= iter.b && frac >= i.a && frac <= i.b)
+        i.*v1 = frac;
+    else
+        i.*v1 = iter.*v2;
+    // FIXME: Remove iter.*v2 from the event queue. This doesn't seem necessary or even possible
+
+    {
+        // This is very dangerous! I am only doing it because I know it won't corrupt the set.
+        auto& interval1 = const_cast<CandidateInterval&>(iter);
+        interval1.*v2 = i.*v1;
+        updateCAndBeta(interval1);
+    }
+}
+
+std::set<CandidateInterval>::iterator ModelPreprocessor::insertInterval(CandidateInterval&& i, const CGAL::Point_3<Kernel>& c, std::set<CandidateInterval>& edgeIntervals) {
+    if (edgeIntervals.empty())
+        return edgeIntervals.emplace(std::forward<CandidateInterval>(i)).first;
+
+    auto i2Iter = edgeIntervals.upper_bound(i);
+    auto i1Iter = edgeIntervals.end();
+    if (i2Iter != edgeIntervals.end() && i2Iter != edgeIntervals.begin()) {
+        i1Iter = i2Iter;
+        --i1Iter;
+    } else if (i2Iter == edgeIntervals.end())
+        i1Iter = std::max_element(edgeIntervals.begin(), edgeIntervals.end());
+
+    assert(i1Iter == edgeIntervals.end() || i1Iter->beta != i.beta);
+
+    while (i1Iter != edgeIntervals.end() &&
+            i1Iter->a >= i.a &&
+            i1Iter->a <= i.b &&
+            i1Iter->d + std::sqrt((i1Iter->aPoint() - i1Iter->rBar).squared_length()) >= i.d + std::sqrt((i.aPoint() - i.rBar).squared_length())) {
+        i1Iter = deleteInterval(i1Iter, edgeIntervals);
+        assert(i1Iter == i2Iter);
+        if (i1Iter == edgeIntervals.begin())
+            i1Iter = edgeIntervals.end();
+        else
+            --i1Iter;
+    }
+
+    while (i2Iter != edgeIntervals.end() &&
+            i2Iter->b >= i.a &&
+            i2Iter->b <= i.b &&
+            i2Iter->d + std::sqrt((i2Iter->bPoint() - i2Iter->rBar).squared_length()) >= i.d + std::sqrt((i.bPoint() - i.rBar).squared_length())) {
+        i2Iter = deleteInterval(i1Iter, edgeIntervals);
+    }
+
+    if (i1Iter != edgeIntervals.end())
+        trimAtTiePoint(*i1Iter, i, &CandidateInterval::a, &CandidateInterval::b);
+
+    if (i2Iter != edgeIntervals.end())
+        trimAtTiePoint(*i1Iter, i, &CandidateInterval::b, &CandidateInterval::a);
+
+    if (i.a == i.b)
+        return std::set<CandidateInterval>::iterator();
+
+    updateCAndBeta(i);
+    auto result = edgeIntervals.emplace(std::forward<CandidateInterval>(i)).first;
+    if (i.a == 0)
+        eventQueue.insert(Event(i.d + std::sqrt((i.halfedge->vertex()->point() - i.rBar).squared_length()), i.halfedge->vertex()));
+    if (i.b == 1)
+        eventQueue.insert(Event(i.d + std::sqrt((endVertex(i.halfedge)->point() - i.rBar).squared_length()), endVertex(i.halfedge)));
+    // FIXME: Don't always insert c... maybe?
+    eventQueue.insert(Event(i.d + std::sqrt((i.frontierPoint() - i.rBar).squared_length()), result));
+    return result;
+}
+
+static float fractionFromIntersection(CGAL::Point_3<Kernel> intersection, CGAL::Point_3<Kernel> point, CGAL::Vector_3<Kernel> vector) {
+    return std::sqrt((intersection - point).squared_length()) / std::sqrt(vector.squared_length());
+}
+
 boost::optional<CandidateInterval> ModelPreprocessor::project(const CandidateInterval& i, Polyhedron::Halfedge_const_handle ei) const {
     auto intervalHalfedge = i.halfedge;
     auto halfedgePoint = intervalHalfedge->vertex()->point();
@@ -221,7 +324,7 @@ boost::optional<CandidateInterval> ModelPreprocessor::project(const CandidateInt
     float rotationAngle = angle(intervalHalfedge->facet()->plane().orthogonal_vector(), ei->facet()->plane().orthogonal_vector());
     glm::mat4 transformation;
     transformation *= glm::translate(-glm::vec3(halfedgePoint.x(), halfedgePoint.y(), halfedgePoint.z()));
-    transformation *= glm::rotate(rotationAngle, glm::vec3(halfedgeVector.x(), halfedgeVector.y(), halfedgeVector.y()));
+    transformation *= glm::rotate(rotationAngle, glm::vec3(halfedgeVector.x(), halfedgeVector.y(), halfedgeVector.z()));
     transformation *= glm::translate(glm::vec3(halfedgePoint.x(), halfedgePoint.y(), halfedgePoint.z()));
     assert(transformation[0][3] == 0 && transformation[1][3] == 0 && transformation[2][3] == 0);
     CGAL::Aff_transformation_3<Kernel> cgalTransformation(transformation[0][0], transformation[1][0], transformation[2][0], transformation[3][0], transformation[0][1], transformation[1][1], transformation[2][1], transformation[3][1], transformation[0][2], transformation[1][2], transformation[2][2], transformation[3][2]);
@@ -249,7 +352,7 @@ boost::optional<CandidateInterval> ModelPreprocessor::project(const CandidateInt
     else
         frontierPoint = ei->vertex()->point() + frontierPointFrac * eiVector;
 
-    return CandidateInterval(a, b, ei, i.r, unfoldedRoot, i.d, frontierPoint, calculateAccessPoint(ei, frontierPointFrac, unfoldedRoot, i.beta));
+    return CandidateInterval(a, b, ei, i.r, unfoldedRoot, i.d, frontierPoint, i.frontierPoint());
 }
 
 template <typename T> static inline int sgn(T val) {
@@ -423,7 +526,8 @@ void ModelPreprocessor::preprocessModel() {
             auto frontierPoint = candidateInterval.frontierPoint();
 
             auto insertedInterval = insertInterval(std::move(candidateInterval), initialPoint.point, halfedgeIntervalMap.emplace(halfedge, std::set<CandidateInterval>()).first->second);
-            eventQueue.emplace((frontierPoint - initialPoint.point).squared_length(), insertedInterval);
+            if (insertedInterval != std::set<CandidateInterval>::iterator())
+                eventQueue.emplace((frontierPoint - initialPoint.point).squared_length(), insertedInterval);
             eventQueue.emplace((halfedge->vertex()->point() - initialPoint.point).squared_length(), halfedge->vertex());
             ++facetCirculator;
         } while (facetCirculator != initialPoint.facet->facet_begin());
