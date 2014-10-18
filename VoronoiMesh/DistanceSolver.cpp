@@ -8,6 +8,7 @@
 
 #include "DistanceSolver.h"
 
+#include <cmath>
 #include <map>
 #include <set>
 
@@ -198,14 +199,74 @@ static float angle(CGAL::Vector_3<Kernel> v1, CGAL::Vector_3<Kernel> v2) {
     //return std::acos(unitize(v1) * unitize(v2));
 }
 
-CGAL::Point_3<Kernel> calculateTiePoint(const CandidateInterval& interval1, const CandidateInterval& interval2) {
-    // Hyperbola. https://people.richland.edu/james/lecture/m116/conics/hypdef.html
-    //float a = (interval1.d - interval2.d) / 2;
-    //float b = ((interval1.rBar - interval2.rBar) / 2).squared_length() - a * a;
+static boost::optional<std::pair<float, float>> compuateM(float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, CGAL::Point_3<Kernel> p, CGAL::Vector_3<Kernel> v) {
+    // a*x^2 + b*y^2 + c*z^2 + d*x*y + e*x*z + f*y*z + g*x + h*y + i*z + j = 0
+    // [x, y, z] = p + m*v
+    // 0 = q*m^2 + r*m + s
+    auto q = a * v.x() * v.x() + b * v.y() * v.y() + c * v.z() * v.z() + d * v.x() * v.y() + e * v.x() * v.z() + f * v.y() * v.z();
+    auto r = 2 * a * p.x() * v.x() + 2 * b * p.y() + v.y() + 2 * c * p.z() * v.z()
+            + d * (p.x() * v.y() + v.x() + p.y()) + e * (p.x() * v.z() + p.z() * v.x()) + f * (p.y() * v.z() + p.z() + v.y())
+            + g * v.x() + h * v.y() + i * v.z();
+    auto s = a * p.x() * p.x() + b * p.y() * p.y() + c * p.z() * p.z()
+            + d * p.x() * p.y() + e * p.x() * p.z() + f * p.y() * p.z()
+            + g * p.x() + h * p.y() + i * p.z() + j;
+    auto discriminant = r * r - 4 * q * s;
+    if (discriminant < 0)
+        return boost::optional<std::pair<float, float>>();
+    auto result1 = (-r + std::sqrt(discriminant)) / (2 * q);
+    {
+        auto substitution = p + result1 * v;
+        auto epsilon = 0.1f;
+        assert(std::abs(a * std::pow(substitution.x(), 2) + b * std::pow(substitution.y(), 2) + c * std::pow(substitution.z(), 2)
+                + d * substitution.x() * substitution.y() + e * substitution.x() * substitution.z() + f * substitution.y() * substitution.z()
+                + g * substitution.x() + h * substitution.y() + i * substitution.z() + j) < epsilon);
+    }
+    auto result2 = (-r - std::sqrt(discriminant)) / (2 * q);
+    {
+        auto substitution = p + result2 * v;
+        auto epsilon = 0.1f;
+        assert(std::abs(a * std::pow(substitution.x(), 2) + b * std::pow(substitution.y(), 2) + c * std::pow(substitution.z(), 2)
+                + d * substitution.x() * substitution.y() + e * substitution.x() * substitution.z() + f * substitution.y() * substitution.z()
+                + g * substitution.x() + h * substitution.y() + i * substitution.z() + j) < epsilon);
+    }
+    return std::make_pair(result1, result2);
+}
 
-    // FIXME: Write this function
-    assert(interval1.halfedge == interval2.halfedge);
-    return CGAL::Point_3<Kernel>(0, 0, 0);
+boost::optional<float> calculateTiePoint(const CandidateInterval& interval1, const CandidateInterval& interval) {
+    assert(interval1.halfedge == interval.halfedge);
+    // interval1.d + |interval1.rBar - a| = interval.d + |interval.rBar - a|
+    auto p = interval1.halfedge->vertex()->point();
+    auto v = endVertex(interval1.halfedge)->point() - p;
+    auto c = interval1.d - interval.d;
+    auto v2 = (interval1.rBar - interval.rBar) / c;
+    auto d = interval.rBar.x() * interval.rBar.x() - interval1.rBar.x() * interval1.rBar.x()
+            + interval.rBar.y() * interval.rBar.y() - interval1.rBar.y() * interval1.rBar.y()
+            + interval.rBar.z() * interval.rBar.z() - interval1.rBar.z() * interval1.rBar.z();
+    auto d2 = (d - c * c) / (2 * c);
+    auto m = compuateM(v2.x() * v2.x() - 1, v2.y() * v2.y() - 1, v2.z() * v2.z() - 1,
+            2 * v2.x() * v2.y(), 2 * v2.x() * v2.z(), 2 * v2.y() * v2.z(),
+            2 * (v2.x() * d2 + interval1.rBar.x()), 2 * (v2.y() * d2 + interval1.rBar.y()), 2 * (v2.z() * d2 + interval1.rBar.z()),
+            d2 * d2 - interval1.rBar.x() * interval1.rBar.x() - interval1.rBar.y() * interval1.rBar.y() - interval1.rBar.z() * interval1.rBar.z(),
+            p, v);
+    if (!m)
+        return boost::optional<float>();
+    auto result1 = m->first;
+    {
+        auto a = p + result1 * v;
+        auto epsilon = 0.1f;
+        assert(std::abs(interval1.d + std::sqrt((interval1.rBar - a).squared_length()) - interval.d - std::sqrt((interval.rBar - a).squared_length())) < epsilon);
+    }
+    if (result1 >= interval1.a && result1 <= interval1.b && result1 >= interval.a && result1 <= interval.b)
+        return result1;
+    auto result2 = m->second;
+    {
+        auto a = p + result1 * v;
+        auto epsilon = 0.1f;
+        assert(std::abs(interval1.d + std::sqrt((interval1.rBar - a).squared_length()) - interval.d - std::sqrt((interval.rBar - a).squared_length())) < epsilon);
+    }
+    if (result2 >= interval1.a && result2 <= interval1.b && result2 >= interval.a && result2 <= interval.b)
+        return result2;
+    return boost::optional<float>();
 }
 
 static float calculateFrontierPointFrac(Polyhedron::Halfedge_const_handle ei, float a, float b, CGAL::Point_3<Kernel> unfoldedRoot) {
@@ -233,14 +294,8 @@ static void updateCAndBeta(CandidateInterval& interval) {
 static void trimAtTiePoint(const CandidateInterval& iter, CandidateInterval& i, float CandidateInterval::*v1, float CandidateInterval::*v2) {
     assert(iter.halfedge == i.halfedge);
 
-    auto point = i.halfedge->vertex()->point();
-    auto nextPoint = endVertex(i.halfedge)->point();
-    auto vector = nextPoint - point;
-
-    auto a = calculateTiePoint(iter, i);
-    auto frac = std::sqrt((a - point).squared_length()) / std::sqrt(vector.squared_length());
-    if (frac >= iter.a && frac <= iter.b && frac >= i.a && frac <= i.b)
-        i.*v1 = frac;
+    if (auto a = calculateTiePoint(iter, i))
+        i.*v1 = *a;
     else
         i.*v1 = iter.*v2;
     // FIXME: Remove iter.*v2 from the event queue. This doesn't seem necessary or even possible
