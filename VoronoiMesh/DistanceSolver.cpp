@@ -11,17 +11,15 @@
 #include <cmath>
 #include <map>
 #include <set>
+#include <sstream>
 
 #define GLM_FORCE_RADIANS
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/vector_angle.hpp>
 
-static Polyhedron::Vertex_const_handle endVertex(Polyhedron::Halfedge_const_handle halfedge) {
-    auto facetCirculator = halfedge->facet_begin();
-    assert(Polyhedron::Halfedge_const_handle(facetCirculator) == halfedge);
-    ++facetCirculator;
-    return facetCirculator->vertex();
+static inline Polyhedron::Vertex_const_handle endVertex(Polyhedron::Halfedge_const_handle halfedge) {
+    return halfedge->opposite()->vertex();
 }
 
 struct CandidateInterval {
@@ -102,12 +100,14 @@ public:
 private:
     class PropagateVisitor;
     class EventLoopEventVisitor;
+    class Printer;
 
-    std::set<CandidateInterval>::iterator insertInterval(CandidateInterval&&, const CGAL::Point_3<Kernel>& c, std::set<CandidateInterval>& edgeIntervals);
+    void insertInterval(CandidateInterval&&, const CGAL::Point_3<Kernel>& c, std::set<CandidateInterval>& edgeIntervals);
     std::set<CandidateInterval>::iterator deleteInterval(std::set<CandidateInterval>::iterator, std::set<CandidateInterval>& edgeIntervals);
     void propagate(const std::set<CandidateInterval>::iterator);
     boost::optional<CandidateInterval> project(const CandidateInterval& i, Polyhedron::Halfedge_const_handle ii) const;
 
+    const Polyhedron& polyhedron;
     const std::vector<InitialPoint>& initialPoints;
     std::map<Polyhedron::Halfedge_const_handle, std::set<CandidateInterval>> halfedgeIntervalMap;
     std::set<Event> eventQueue;
@@ -129,8 +129,9 @@ CGAL::Point_3<Kernel> CandidateInterval::frontierPoint() const {
     return boost::apply_visitor(FrontierPointVisitor(), c);
 }
 
-ModelPreprocessor::ModelPreprocessor(const Polyhedron&, const std::vector<InitialPoint>& initialPoints)
-    : initialPoints(initialPoints)
+ModelPreprocessor::ModelPreprocessor(const Polyhedron& polyhedron, const std::vector<InitialPoint>& initialPoints)
+    : polyhedron(polyhedron)
+    , initialPoints(initialPoints)
 {
 }
 
@@ -154,7 +155,7 @@ private:
 };
 
 std::set<CandidateInterval>::iterator ModelPreprocessor::deleteInterval(std::set<CandidateInterval>::iterator item, std::set<CandidateInterval>& edgeIntervals) {
-    for (auto i = eventQueue.begin(); i != eventQueue.end(); ++i) {
+    for (auto i = eventQueue.begin(); i != eventQueue.end();) {
         if (boost::apply_visitor(DeleteEventVisitor(item), *(i->eventData)))
             i = eventQueue.erase(i);
         else
@@ -164,39 +165,64 @@ std::set<CandidateInterval>::iterator ModelPreprocessor::deleteInterval(std::set
     return edgeIntervals.erase(item);
 }
 
+static std::pair<float, float> intersectCoplanarLines(CGAL::Point_3<Kernel> p1, CGAL::Vector_3<Kernel> v1, CGAL::Point_3<Kernel> p2, CGAL::Vector_3<Kernel> v2) {
+    float m;
+    float n;
+    if (std::abs(v1.x()) >= std::abs(v1.y()) && std::abs(v1.x()) >= std::abs(v1.z())) {
+        float numerator = p1.y() - p2.y() + (p2.x() * v1.y() / v1.x()) - (p1.x() * v1.y() / v1.x());
+        float denominator = v2.y() - (v2.x() * v1.y() / v1.x());
+        n = numerator / denominator;
+        m = (p2.x() + n * v2.x() - p1.x()) / v1.x();
+    } else if (std::abs(v1.y()) >= std::abs(v1.x()) && std::abs(v1.y()) >= std::abs(v1.z())) {
+        float numerator = p1.x() - p2.x() + (p2.y() * v1.x() / v1.y()) - (p1.y() * v1.x() / v1.y());
+        float denominator = v2.x() - (v2.y() * v1.x() / v1.y());
+        n = numerator / denominator;
+        m = (p2.y() + n * v2.y() - p1.y()) / v1.y();
+    } else {
+        float numerator = p1.y() - p2.y() + (p2.z() * v1.y() / v1.z()) - (p1.z() * v1.y() / v1.z());
+        float denominator = v2.y() - (v2.z() * v1.y() / v1.z());
+        n = numerator / denominator;
+        m = (p2.z() + n * v2.z() - p1.z()) / v1.z();
+    }
+    auto u1 = p1 + m * v1;
+    auto u2 = p2 + n * v2;
+    auto length = std::sqrt((u1 - u2).squared_length());
+    assert(length < 0.0001);
+    return std::make_pair(m, n);
+}
+
 static CGAL::Point_3<Kernel> calculateAccessPoint(Polyhedron::Halfedge_const_handle halfedge, float frontierPointFrac, CGAL::Point_3<Kernel> unfoldedRoot, CGAL::Point_3<Kernel> oldBeta) {
     assert(frontierPointFrac >= 0 && frontierPointFrac <= 1);
     if (frontierPointFrac == 0 || frontierPointFrac == 1)
         return oldBeta;
 
     auto point = halfedge->vertex()->point();
-    auto vector = endVertex(halfedge)->point() - point;
-    auto frontierPoint = point + frontierPointFrac * vector;
+    auto frontierPoint = point + frontierPointFrac * (endVertex(halfedge)->point() - point);
+    auto vectorToUnfoldedRoot = unfoldedRoot - frontierPoint;
 
     auto circulator = halfedge->facet_begin();
     for (++circulator; circulator != halfedge->facet_begin(); ++circulator) {
-        point = circulator->vertex()->point();
-        auto point2 = endVertex(circulator)->point();
-        auto intersection = CGAL::intersection(CGAL::Ray_3<Kernel>(point, point2), CGAL::Ray_3<Kernel>(frontierPoint, unfoldedRoot));
-        assert(intersection);
-        auto intersectionPoint = boost::get<CGAL::Point_3<Kernel>>(*intersection);
-        float frac = std::sqrt((intersectionPoint - point).squared_length()) / std::sqrt((point2 - point).squared_length());
-        if (frac >= 0 && frac <= 1)
-            return intersectionPoint;
+        auto circulatorPoint = circulator->vertex()->point();
+        auto circulatorVector = endVertex(circulator)->point() - circulatorPoint;
+        auto intersection = intersectCoplanarLines(frontierPoint, vectorToUnfoldedRoot, circulatorPoint, circulatorVector);
+        if (intersection.second >= 0 && intersection.second <= 1)
+            return circulatorPoint + intersection.second * circulatorVector;
     }
     assert(false);
     return CGAL::Point_3<Kernel>(0, 0, 0);
 }
 
-/*static CGAL::Vector_3<Kernel> unitize(CGAL::Vector_3<Kernel> x) {
-    return x / std::sqrt(x.squared_length());
-}*/
-
 static float angle(CGAL::Vector_3<Kernel> v1, CGAL::Vector_3<Kernel> v2) {
     auto u1 = glm::normalize(glm::vec3(v1.x(), v1.y(), v1.z()));
     auto u2 = glm::normalize(glm::vec3(v2.x(), v2.y(), v2.z()));
     return glm::angle(u1, u2);
-    //return std::acos(unitize(v1) * unitize(v2));
+}
+
+static float orientedAngle(CGAL::Vector_3<Kernel> v1, CGAL::Vector_3<Kernel> v2, CGAL::Vector_3<Kernel> ref) {
+    auto u1 = glm::normalize(glm::vec3(v1.x(), v1.y(), v1.z()));
+    auto u2 = glm::normalize(glm::vec3(v2.x(), v2.y(), v2.z()));
+    auto u3 = glm::normalize(glm::vec3(ref.x(), ref.y(), ref.z()));
+    return glm::orientedAngle(u1, u2, u3);
 }
 
 static boost::optional<std::pair<float, float>> compuateM(float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, CGAL::Point_3<Kernel> p, CGAL::Vector_3<Kernel> v) {
@@ -237,6 +263,23 @@ boost::optional<float> calculateTiePoint(const CandidateInterval& interval1, con
     // interval1.d + |interval1.rBar - a| = interval.d + |interval.rBar - a|
     auto p = interval1.halfedge->vertex()->point();
     auto v = endVertex(interval1.halfedge)->point() - p;
+    if (interval1.d == interval.d) {
+        auto dr = interval1.rBar - interval.rBar;
+        auto numerator = -2 * ((p - CGAL::Point_3<Kernel>(0, 0, 0)) * dr) + interval1.rBar.x() * interval1.rBar.x() - interval.rBar.x() * interval.rBar.x()
+                + interval1.rBar.y() * interval1.rBar.y() - interval.rBar.y() * interval.rBar.y()
+                + interval1.rBar.z() * interval1.rBar.z() - interval.rBar.z() * interval.rBar.z();
+        auto denominator = 2 * (v * dr);
+        auto result = numerator / denominator;
+        {
+            auto a = p + result * v;
+            auto epsilon = 0.0001f;
+            auto error = std::abs(interval1.d + std::sqrt((interval1.rBar - a).squared_length()) - interval.d - std::sqrt((interval.rBar - a).squared_length()));
+            assert(error < epsilon);
+        }
+        if (result >= interval1.a && result <= interval1.b && result >= interval.a && result <= interval.b)
+            return result;
+        return boost::optional<float>();
+    }
     auto c = interval1.d - interval.d;
     auto v2 = (interval1.rBar - interval.rBar) / c;
     auto d = interval.rBar.x() * interval.rBar.x() - interval1.rBar.x() * interval1.rBar.x()
@@ -278,8 +321,7 @@ static float calculateFrontierPointFrac(Polyhedron::Halfedge_const_handle ei, fl
 
 static void updateCAndBeta(CandidateInterval& interval) {
     auto point = interval.halfedge->vertex()->point();
-    auto nextPoint = endVertex(interval.halfedge)->point();
-    auto vector = nextPoint - point;
+    auto vector = endVertex(interval.halfedge)->point() - point;
 
     auto frontierPointFrac = calculateFrontierPointFrac(interval.halfedge, interval.a, interval.b, interval.rBar);
     if (frontierPointFrac == 0)
@@ -293,6 +335,10 @@ static void updateCAndBeta(CandidateInterval& interval) {
 
 static void trimAtTiePoint(const CandidateInterval& iter, CandidateInterval& i, float CandidateInterval::*v1, float CandidateInterval::*v2) {
     assert(iter.halfedge == i.halfedge);
+
+    assert(iter.a <= iter.b && i.a <= i.b);
+    if (iter.b < i.a || i.b < iter.a)
+        return;
 
     if (auto a = calculateTiePoint(iter, i))
         i.*v1 = *a;
@@ -308,9 +354,17 @@ static void trimAtTiePoint(const CandidateInterval& iter, CandidateInterval& i, 
     }
 }
 
-std::set<CandidateInterval>::iterator ModelPreprocessor::insertInterval(CandidateInterval&& i, const CGAL::Point_3<Kernel>& c, std::set<CandidateInterval>& edgeIntervals) {
-    if (edgeIntervals.empty())
-        return edgeIntervals.emplace(std::forward<CandidateInterval>(i)).first;
+void ModelPreprocessor::insertInterval(CandidateInterval&& i, const CGAL::Point_3<Kernel>& c, std::set<CandidateInterval>& edgeIntervals) {
+    if (edgeIntervals.empty()) {
+        auto result = edgeIntervals.emplace(std::forward<CandidateInterval>(i)).first;
+        if (i.a == 0)
+            eventQueue.insert(Event(i.d + std::sqrt((i.halfedge->vertex()->point() - i.rBar).squared_length()), i.halfedge->vertex()));
+        if (i.b == 1)
+            eventQueue.insert(Event(i.d + std::sqrt((endVertex(i.halfedge)->point() - i.rBar).squared_length()), endVertex(i.halfedge)));
+        // FIXME: Don't always insert c... maybe?
+        eventQueue.insert(Event(i.d + std::sqrt((i.frontierPoint() - i.rBar).squared_length()), result));
+        return;
+    }
 
     auto i2Iter = edgeIntervals.upper_bound(i);
     auto i1Iter = edgeIntervals.end();
@@ -320,7 +374,9 @@ std::set<CandidateInterval>::iterator ModelPreprocessor::insertInterval(Candidat
     } else if (i2Iter == edgeIntervals.end())
         i1Iter = std::max_element(edgeIntervals.begin(), edgeIntervals.end());
 
-    assert(i1Iter == edgeIntervals.end() || i1Iter->beta != i.beta);
+    //assert(i1Iter == edgeIntervals.end() || i1Iter->beta != i.beta);
+    assert(i1Iter == edgeIntervals.end() || i1Iter->halfedge == i.halfedge);
+    assert(i2Iter == edgeIntervals.end() || i2Iter->halfedge == i.halfedge);
 
     while (i1Iter != edgeIntervals.end() &&
             i1Iter->a >= i.a &&
@@ -341,14 +397,15 @@ std::set<CandidateInterval>::iterator ModelPreprocessor::insertInterval(Candidat
         i2Iter = deleteInterval(i1Iter, edgeIntervals);
     }
 
+    // FIXME: Deal with trying to insert a dominated interval. Maybe this won't happen?
     if (i1Iter != edgeIntervals.end())
         trimAtTiePoint(*i1Iter, i, &CandidateInterval::a, &CandidateInterval::b);
 
     if (i2Iter != edgeIntervals.end())
-        trimAtTiePoint(*i1Iter, i, &CandidateInterval::b, &CandidateInterval::a);
+        trimAtTiePoint(*i2Iter, i, &CandidateInterval::b, &CandidateInterval::a);
 
     if (i.a == i.b)
-        return std::set<CandidateInterval>::iterator();
+        return;
 
     updateCAndBeta(i);
     auto result = edgeIntervals.emplace(std::forward<CandidateInterval>(i)).first;
@@ -358,45 +415,53 @@ std::set<CandidateInterval>::iterator ModelPreprocessor::insertInterval(Candidat
         eventQueue.insert(Event(i.d + std::sqrt((endVertex(i.halfedge)->point() - i.rBar).squared_length()), endVertex(i.halfedge)));
     // FIXME: Don't always insert c... maybe?
     eventQueue.insert(Event(i.d + std::sqrt((i.frontierPoint() - i.rBar).squared_length()), result));
-    return result;
-}
-
-static float fractionFromIntersection(CGAL::Point_3<Kernel> intersection, CGAL::Point_3<Kernel> point, CGAL::Vector_3<Kernel> vector) {
-    return std::sqrt((intersection - point).squared_length()) / std::sqrt(vector.squared_length());
 }
 
 boost::optional<CandidateInterval> ModelPreprocessor::project(const CandidateInterval& i, Polyhedron::Halfedge_const_handle ei) const {
     auto intervalHalfedge = i.halfedge;
     auto halfedgePoint = intervalHalfedge->vertex()->point();
-    auto halfedgeVector = endVertex(intervalHalfedge)->point() - intervalHalfedge->vertex()->point();
+    auto halfedgeVector = endVertex(intervalHalfedge)->point() - halfedgePoint;
     auto eiEndVertex = endVertex(ei);
     auto eiVector = eiEndVertex->point() - ei->vertex()->point();
-    auto p1 = intervalHalfedge->vertex()->point() + i.a * halfedgeVector;
-    auto p2 = intervalHalfedge->vertex()->point() + i.b * halfedgeVector;
+    auto p1 = halfedgePoint + i.a * halfedgeVector;
+    auto p2 = halfedgePoint + i.b * halfedgeVector;
 
     // rotate unwrappedRoot into the plane of ei->facet()->plane()
     auto unfoldedRoot = i.rBar;
-    float rotationAngle = angle(intervalHalfedge->facet()->plane().orthogonal_vector(), ei->facet()->plane().orthogonal_vector());
-    glm::mat4 transformation;
-    transformation *= glm::translate(-glm::vec3(halfedgePoint.x(), halfedgePoint.y(), halfedgePoint.z()));
-    transformation *= glm::rotate(rotationAngle, glm::vec3(halfedgeVector.x(), halfedgeVector.y(), halfedgeVector.z()));
-    transformation *= glm::translate(glm::vec3(halfedgePoint.x(), halfedgePoint.y(), halfedgePoint.z()));
-    assert(transformation[0][3] == 0 && transformation[1][3] == 0 && transformation[2][3] == 0);
-    CGAL::Aff_transformation_3<Kernel> cgalTransformation(transformation[0][0], transformation[1][0], transformation[2][0], transformation[3][0], transformation[0][1], transformation[1][1], transformation[2][1], transformation[3][1], transformation[0][2], transformation[1][2], transformation[2][2], transformation[3][2]);
-    unfoldedRoot = cgalTransformation.transform(unfoldedRoot);
+    auto rotationAngle = orientedAngle(intervalHalfedge->facet()->plane().orthogonal_vector(),
+            ei->facet()->plane().orthogonal_vector(),
+            halfedgeVector);
+    glm::vec3 glmPoint(halfedgePoint.x(), halfedgePoint.y(), halfedgePoint.z());
+    glm::vec3 glmVector(halfedgeVector.x(), halfedgeVector.y(), halfedgeVector.z());
+    glm::mat4 transformation = glm::translate(glmPoint) * glm::rotate(rotationAngle, glmVector) * glm::translate(-glmPoint);
+    assert(transformation[0][3] == 0 && transformation[1][3] == 0 && transformation[2][3] == 0 && transformation[3][3] == 1);
 
-    auto intersection = CGAL::intersection(CGAL::Ray_3<Kernel>(unfoldedRoot, p1), CGAL::Ray_3<Kernel>(ei->vertex()->point(), endVertex(ei)->point()));
-    assert(intersection);
-    auto a = fractionFromIntersection(boost::get<CGAL::Point_3<Kernel>>(*intersection), ei->vertex()->point(), eiVector);
-    intersection = CGAL::intersection(CGAL::Ray_3<Kernel>(unfoldedRoot, p2), CGAL::Ray_3<Kernel>(ei->vertex()->point(), endVertex(ei)->point()));
-    assert(intersection);
-    auto b = fractionFromIntersection(boost::get<CGAL::Point_3<Kernel>>(*intersection), ei->vertex()->point(), eiVector);
+    CGAL::Aff_transformation_3<Kernel> cgalTransformation(transformation[0][0], transformation[1][0], transformation[2][0], transformation[3][0],
+            transformation[0][1], transformation[1][1], transformation[2][1], transformation[3][1],
+            transformation[0][2], transformation[1][2], transformation[2][2], transformation[3][2]);
+    unfoldedRoot = cgalTransformation.transform(unfoldedRoot);
+    assert(std::sqrt((unfoldedRoot - ei->facet()->plane().projection(unfoldedRoot)).squared_length()) < 0.0001f);
+    unfoldedRoot = ei->facet()->plane().projection(unfoldedRoot);
+
+    auto aintersection = intersectCoplanarLines(ei->vertex()->point(), eiVector, unfoldedRoot, p1 - unfoldedRoot);
+    auto bintersection = intersectCoplanarLines(ei->vertex()->point(), eiVector, unfoldedRoot, p2 - unfoldedRoot);
+
+    auto a = aintersection.first;
+    auto b = bintersection.first;
+
+    if (aintersection.second < 0)
+        a = (aintersection.first > 0 ? -1 : 1) * std::numeric_limits<float>::infinity();
+    if (bintersection.second < 0)
+        b = (bintersection.first > 0 ? -1 : 1) *std::numeric_limits<float>::infinity();
 
     if ((a > 1 && b > 1) || (a < 0 && b < 0))
         return boost::optional<CandidateInterval>();
 
     a = glm::clamp<float>(a, 0, 1);
     b = glm::clamp<float>(b, 0, 1);
+
+    if (a > b)
+        std::swap(a, b);
 
     auto frontierPointFrac = calculateFrontierPointFrac(ei, a, b, unfoldedRoot);
     boost::variant<CGAL::Point_3<Kernel>, Polyhedron::Vertex_const_handle> frontierPoint;
@@ -528,12 +593,19 @@ public:
     }
 
     void operator()(CGAL::Point_3<Kernel> c) const {
-        auto facetCirculator = i.halfedge->opposite()->facet_begin();
+        auto opposite = i.halfedge->opposite();
+        assert(opposite->vertex() == endVertex(i.halfedge));
+        auto facetCirculator = opposite->facet_begin();
         assert(facetCirculator->opposite() == i.halfedge);
-        for (++facetCirculator; facetCirculator != i.halfedge->facet_begin(); ++facetCirculator) {
+        if (facetCirculator->facet() == Polyhedron::Facet_const_handle())
+            return;
+        for (++facetCirculator; facetCirculator != opposite->facet_begin(); ++facetCirculator) {
             Polyhedron::Halfedge_const_handle halfedge = facetCirculator;
-            if (boost::optional<CandidateInterval> ii = modelPreprocessor.project(i, halfedge))
+            std::cout << i.halfedge - modelPreprocessor.polyhedron.halfedges_begin() << " " << halfedge - modelPreprocessor.polyhedron.halfedges_begin() << std::endl;
+            if (auto ii = modelPreprocessor.project(i, halfedge)) {
+                assert(halfedge != i.halfedge && ii->halfedge == halfedge);
                 modelPreprocessor.insertInterval(std::move(*ii), i.rBar, modelPreprocessor.halfedgeIntervalMap.emplace(halfedge, std::set<CandidateInterval>()).first->second);
+            }
         }
     }
 
@@ -571,24 +643,41 @@ private:
     ModelPreprocessor& modelPreprocessor;
 };
 
+class ModelPreprocessor::Printer : public boost::static_visitor<std::string> {
+public:
+    Printer(ModelPreprocessor& modelPreprocessor)
+        : modelPreprocessor(modelPreprocessor)
+    {
+    }
+
+    std::string operator()(std::set<CandidateInterval>::iterator candidateInterval) const {
+        std::ostringstream out;
+        out << candidateInterval->halfedge - modelPreprocessor.polyhedron.halfedges_begin();
+        return out.str();
+    }
+
+    std::string operator()(Polyhedron::Vertex_const_handle) const {
+        return "Vertex";
+    }
+
+private:
+    ModelPreprocessor& modelPreprocessor;
+};
+
 void ModelPreprocessor::preprocessModel() {
     for (const auto& initialPoint : initialPoints) {
         auto facetCirculator = initialPoint.facet->facet_begin();
         do {
             auto halfedge = facetCirculator;
-            
-            CandidateInterval candidateInterval = createCandidateIntervalOverEntireEdge(halfedge, initialPoint.point);
-            auto frontierPoint = candidateInterval.frontierPoint();
-
-            auto insertedInterval = insertInterval(std::move(candidateInterval), initialPoint.point, halfedgeIntervalMap.emplace(halfedge, std::set<CandidateInterval>()).first->second);
-            if (insertedInterval != std::set<CandidateInterval>::iterator())
-                eventQueue.emplace((frontierPoint - initialPoint.point).squared_length(), insertedInterval);
-            eventQueue.emplace((halfedge->vertex()->point() - initialPoint.point).squared_length(), halfedge->vertex());
+            insertInterval(createCandidateIntervalOverEntireEdge(halfedge, initialPoint.point),
+                    initialPoint.point, halfedgeIntervalMap.emplace(halfedge, std::set<CandidateInterval>()).first->second);
             ++facetCirculator;
         } while (facetCirculator != initialPoint.facet->facet_begin());
     }
 
     while (!eventQueue.empty()) {
+        //for (auto& i : eventQueue)
+        //    std::cout << "Event queue: " << boost::apply_visitor(Printer(*this), *i.eventData) << std::endl;
         auto eventIter = eventQueue.begin();
         const auto& event = permanentLabels.emplace(eventIter->eventData, eventIter->label).first->first;
         boost::apply_visitor(EventLoopEventVisitor(*this), *event);
