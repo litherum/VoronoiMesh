@@ -116,8 +116,10 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
 
     SCNProgram *bunnyProgram = [SCNProgram program];
     NSURL *vertexShaderURL = [[NSBundle mainBundle] URLForResource:@"Bunny" withExtension:@"vs"];
+    NSURL *geometryShaderURL = [[NSBundle mainBundle] URLForResource:@"Bunny" withExtension:@"gs"];
     NSURL *fragmentShaderURL = [[NSBundle mainBundle] URLForResource:@"Bunny" withExtension:@"fs"];
     bunnyProgram.vertexShader = [NSString stringWithContentsOfURL:vertexShaderURL encoding:NSASCIIStringEncoding error:NULL];
+    bunnyProgram.geometryShader = [NSString stringWithContentsOfURL:geometryShaderURL encoding:NSASCIIStringEncoding error:NULL];
     bunnyProgram.fragmentShader = [NSString stringWithContentsOfURL:fragmentShaderURL encoding:NSASCIIStringEncoding error:NULL];
 
     [bunnyProgram setSemantic:SCNGeometrySourceSemanticVertex forSymbol:@"position" options:nil];
