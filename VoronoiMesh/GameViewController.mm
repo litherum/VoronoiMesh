@@ -12,6 +12,8 @@
 #import "ModelBuilder.h"
 
 #import <vector>
+#import <OpenGL/gl3.h>
+#import <GLKit/GLKMath.h>
 
 @implementation GameViewController
 
@@ -25,6 +27,11 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
     return CGAL::Point_3<Kernel>(0, 0, 0) + (result / facet->facet_degree());
 }
 
+- (void)program:(SCNProgram *)program handleError:(NSError *)error
+{
+    NSLog(@"Program error: %@", error);
+}
+
 -(void)awakeFromNib
 {
     const Polyhedron model = buildModel(std::string([[[NSBundle mainBundle] pathForResource:@"bun_zipper" ofType:@"ply"] UTF8String]));
@@ -33,7 +40,7 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
         std::vector<InitialPoint> initialPoints;
         Polyhedron::Facet_const_handle facet = model.facets_begin();
         initialPoints.push_back(InitialPoint(facet, facetCenter(facet)));
-        preprocessModel(model, initialPoints);
+        //preprocessModel(model, initialPoints);
     }
 
     // create a new scene
@@ -96,6 +103,7 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
             ++facetCirculator;
         } while (facetCirculator != facetIterator->facet_begin());
     }
+
     SCNGeometry *bunnyGeometry = [SCNGeometry
                                   geometryWithSources:@[[SCNGeometrySource geometrySourceWithVertices:vertexPositions.data()
                                                                                                 count:vertexPositions.size()],
@@ -103,17 +111,24 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
                                                                                                count:vertexNormals.size()]]
                                   elements:@[[SCNGeometryElement geometryElementWithData:[NSData dataWithBytes:vertexIndices.data() length:vertexIndices.size() * sizeof(int)]
                                                                            primitiveType:SCNGeometryPrimitiveTypeTriangles
-                                                                          primitiveCount:model.size_of_facets()
+                                                                          primitiveCount:vertexIndices.size() / 3
                                                                            bytesPerIndex:sizeof(int)]]];
 
+    SCNProgram *bunnyProgram = [SCNProgram program];
+    NSURL *vertexShaderURL = [[NSBundle mainBundle] URLForResource:@"Bunny" withExtension:@"vs"];
+    NSURL *fragmentShaderURL = [[NSBundle mainBundle] URLForResource:@"Bunny" withExtension:@"fs"];
+    bunnyProgram.vertexShader = [NSString stringWithContentsOfURL:vertexShaderURL encoding:NSASCIIStringEncoding error:NULL];
+    bunnyProgram.fragmentShader = [NSString stringWithContentsOfURL:fragmentShaderURL encoding:NSASCIIStringEncoding error:NULL];
+
+    [bunnyProgram setSemantic:SCNGeometrySourceSemanticVertex forSymbol:@"position" options:nil];
+    [bunnyProgram setSemantic:SCNModelViewProjectionTransform forSymbol:@"mvpMatrix" options:nil];
+
+    bunnyProgram.delegate = self;
+
     SCNMaterial *bunnyMaterial = [SCNMaterial material];
-    bunnyMaterial.ambient.contents = [NSColor darkGrayColor];
-    bunnyMaterial.diffuse.contents = [NSColor blueColor];
-    bunnyMaterial.specular.contents = [NSColor darkGrayColor];
-    bunnyMaterial.shininess = 0.1;
-    bunnyMaterial.lightingModelName = SCNLightingModelBlinn;
-    bunnyMaterial.shaderModifiers = @{SCNShaderModifierEntryPointSurface: @"_surface.diffuse += vec4((sin(_surface.position.x * 10) + 1) / 6, 0, 0, 1);"};
-    bunnyGeometry.materials = @[bunnyMaterial];
+    bunnyMaterial.program = bunnyProgram;
+
+    bunnyGeometry.firstMaterial = bunnyMaterial;
 
     SCNNode *bunnyNode = [SCNNode node];
     bunnyNode.geometry = bunnyGeometry;
@@ -128,6 +143,9 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
     animation.repeatCount = MAXFLOAT; //repeat forever
     [bunnyNode addAnimation:animation forKey:nil];
 
+    const NSOpenGLPixelFormatAttribute attributes[] = {NSOpenGLPFADoubleBuffer, NSOpenGLPFADepthSize, 32, NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core, 0};
+    self.gameView.pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
+
     // set the scene to the view
     self.gameView.scene = scene;
     
@@ -138,7 +156,7 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
     self.gameView.showsStatistics = YES;
     
     // configure the view
-    self.gameView.backgroundColor = [NSColor blackColor];  
+    self.gameView.backgroundColor = [NSColor blackColor];
 }
 
 @end
