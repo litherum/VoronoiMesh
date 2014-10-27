@@ -106,6 +106,21 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
         } while (facetCirculator != facetIterator->facet_begin());
     }
 
+/*
+    vertexPositions.clear();
+    vertexPositions.push_back(SCNVector3Make(-0.5, -0.5, 0.0));
+    vertexPositions.push_back(SCNVector3Make(0.5, -0.5, 0.0));
+    vertexPositions.push_back(SCNVector3Make(0.0, 0.5, 0.0));
+    vertexNormals.clear();
+    vertexNormals.push_back(SCNVector3Make(0.0, 0.0, 1.0));
+    vertexNormals.push_back(SCNVector3Make(0.0, 0.0, 1.0));
+    vertexNormals.push_back(SCNVector3Make(0.0, 0.0, 1.0));
+    vertexIndices.clear();
+    vertexIndices.push_back(0);
+    vertexIndices.push_back(1);
+    vertexIndices.push_back(2);
+*/
+
     SCNGeometry *bunnyGeometry = [SCNGeometry
                                   geometryWithSources:@[[SCNGeometrySource geometrySourceWithVertices:vertexPositions.data()
                                                                                                 count:vertexPositions.size()],
@@ -124,7 +139,7 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
     bunnyProgram.geometryShader = [NSString stringWithContentsOfURL:geometryShaderURL encoding:NSASCIIStringEncoding error:NULL];
     bunnyProgram.fragmentShader = [NSString stringWithContentsOfURL:fragmentShaderURL encoding:NSASCIIStringEncoding error:NULL];
 
-    [bunnyProgram setSemantic:SCNGeometrySourceSemanticVertex forSymbol:@"position" options:nil];
+    [bunnyProgram setSemantic:SCNGeometrySourceSemanticVertex forSymbol:@"vs_position" options:nil];
     [bunnyProgram setSemantic:SCNModelViewProjectionTransform forSymbol:@"mvpMatrix" options:nil];
 
     bunnyProgram.delegate = self;
