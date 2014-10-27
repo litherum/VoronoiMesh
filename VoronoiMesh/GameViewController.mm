@@ -161,12 +161,15 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
     {
         [self.gameView.openGLContext makeCurrentContext];
 
+        GLint maxUniformBlockSize;
+        glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
+        NSLog(@"Maximum uniform block size: %d Minimum in spec: 16384", maxUniformBlockSize);
+
         glGenBuffers(1, &glBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, glBuffer);
         std::vector<GLfloat> localBuffer;
-        for (unsigned i = 0; i < 16; ++i)
-            localBuffer.push_back(0.25);
-        localBuffer[1] = 1.0;
+        for (unsigned i = 0; i < 16384; ++i)
+            localBuffer.push_back(0);
         glBufferData(GL_UNIFORM_BUFFER, localBuffer.size() * sizeof(GLfloat), localBuffer.data(), GL_DYNAMIC_DRAW);
 
         assert(glGetError() == GL_NO_ERROR);

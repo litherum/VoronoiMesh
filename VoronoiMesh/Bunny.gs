@@ -5,10 +5,15 @@ layout(triangle_strip, max_vertices=3) out;
 
 uniform mat4 mvpMatrix;
 
+uniform float dummy;
+layout(std140) uniform DataStructureBlock {
+    vec4 data[4096];
+};
+
 void main() {
     vec3 n = normalize(cross(gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz, gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz));
     for (uint i = 0; i < 3; ++i) {
-        gl_Position = mvpMatrix * (gl_in[i].gl_Position + vec4(0.001* n, 0.0));
+        gl_Position = mvpMatrix * (gl_in[i].gl_Position + vec4((0.008 + dummy + data[352].y) * n, 0.0));
         gl_PrimitiveID = gl_PrimitiveIDIn;
         EmitVertex();
     }
