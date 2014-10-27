@@ -15,7 +15,9 @@
 #import <OpenGL/gl3.h>
 #import <GLKit/GLKMath.h>
 
-@implementation GameViewController
+@implementation GameViewController {
+    GLuint glBuffer;
+}
 
 static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
     CGAL::Vector_3<Kernel> result(0, 0, 0);
@@ -129,6 +131,14 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
 
     SCNMaterial *bunnyMaterial = [SCNMaterial material];
     bunnyMaterial.program = bunnyProgram;
+    [bunnyMaterial handleBindingOfSymbol:@"dummy" usingBlock:^(unsigned int programID, unsigned int location, SCNNode *renderedNode, SCNRenderer *renderer) {
+        assert(glIsBuffer(glBuffer));
+        GLuint blockIndex = glGetUniformBlockIndex(programID, "DataStructureBlock");
+        const GLuint blockBinding = 1;
+        glUniformBlockBinding(programID, blockIndex, blockBinding);
+        glBindBufferBase(GL_UNIFORM_BUFFER, blockBinding, glBuffer);
+        glUniform1f(location, 0.0f);
+    }];
 
     bunnyGeometry.firstMaterial = bunnyMaterial;
 
@@ -148,6 +158,21 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
     const NSOpenGLPixelFormatAttribute attributes[] = {NSOpenGLPFADoubleBuffer, NSOpenGLPFADepthSize, 32, NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core, 0};
     self.gameView.pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
 
+    {
+        [self.gameView.openGLContext makeCurrentContext];
+
+        glGenBuffers(1, &glBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, glBuffer);
+        std::vector<GLfloat> localBuffer;
+        for (unsigned i = 0; i < 16; ++i)
+            localBuffer.push_back(0.25);
+        localBuffer[1] = 1.0;
+        glBufferData(GL_UNIFORM_BUFFER, localBuffer.size() * sizeof(GLfloat), localBuffer.data(), GL_DYNAMIC_DRAW);
+
+        assert(glGetError() == GL_NO_ERROR);
+        assert(glIsBuffer(glBuffer));
+    }
+
     // set the scene to the view
     self.gameView.scene = scene;
     
@@ -159,6 +184,11 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
     
     // configure the view
     self.gameView.backgroundColor = [NSColor blackColor];
+}
+
+- (void)dealloc {
+    if (glBuffer)
+        glDeleteTextures(1, &glBuffer);
 }
 
 @end

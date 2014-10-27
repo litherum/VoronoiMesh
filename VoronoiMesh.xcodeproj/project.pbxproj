@@ -127,9 +127,9 @@
 				C28D382019CFB2A2002DD0E9 /* ModelBuilder.h */,
 				C28D382219CFB499002DD0E9 /* DistanceSolver.cpp */,
 				C28D382319CFB499002DD0E9 /* DistanceSolver.h */,
-				C2B9E9B119FD80D900DF0014 /* Bunny.fs */,
-				C2B9E9B319FD8BAF00DF0014 /* Bunny.gs */,
 				C2B9E9B519FD8EF800DF0014 /* Bunny.vs */,
+				C2B9E9B319FD8BAF00DF0014 /* Bunny.gs */,
+				C2B9E9B119FD80D900DF0014 /* Bunny.fs */,
 			);
 			path = VoronoiMesh;
 			sourceTree = "<group>";

@@ -7,6 +7,7 @@
 //
 
 #import <SceneKit/SceneKit.h>
+#import <GLKit/GLKit.h>
 
 #import "GameView.h"
 

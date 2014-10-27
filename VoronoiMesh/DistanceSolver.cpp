@@ -431,6 +431,7 @@ boost::optional<CandidateInterval> ModelPreprocessor::project(const CandidateInt
     auto rotationAngle = orientedAngle(intervalHalfedge->facet()->plane().orthogonal_vector(),
             ei->facet()->plane().orthogonal_vector(),
             halfedgeVector);
+    // FIXME: Use GLKit
     glm::vec3 glmPoint(halfedgePoint.x(), halfedgePoint.y(), halfedgePoint.z());
     glm::vec3 glmVector(halfedgeVector.x(), halfedgeVector.y(), halfedgeVector.z());
     glm::mat4 transformation = glm::translate(glmPoint) * glm::rotate(rotationAngle, glmVector) * glm::translate(-glmPoint);
