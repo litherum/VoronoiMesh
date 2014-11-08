@@ -10,9 +10,9 @@
 #define __VoronoiMesh__ModelBuilder__
 
 #include <CGAL/HalfedgeDS_vector.h>
-#include <CGAL/Polyhedron_3.h>
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wconditional-uninitialized"
+#include <CGAL/Polyhedron_3.h>
 #include <CGAL/Simple_cartesian.h>
 #pragma clang diagnostic pop
 

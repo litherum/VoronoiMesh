@@ -15,7 +15,6 @@
 		C28D37F719CE7B57002DD0E9 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C28D37F619CE7B57002DD0E9 /* Images.xcassets */; };
 		C28D37FA19CE7B57002DD0E9 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = C28D37F819CE7B57002DD0E9 /* MainMenu.xib */; };
 		C28D380619CE7B57002DD0E9 /* VoronoiMeshTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C28D380519CE7B57002DD0E9 /* VoronoiMeshTests.m */; };
-		C28D381019CE7FFD002DD0E9 /* libCGAL.10.0.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C28D380F19CE7FFD002DD0E9 /* libCGAL.10.0.3.dylib */; };
 		C28D381219CE80C0002DD0E9 /* libply.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C28D381119CE80C0002DD0E9 /* libply.a */; };
 		C28D381819CE869A002DD0E9 /* bun_zipper_res2.ply in Resources */ = {isa = PBXBuildFile; fileRef = C28D381419CE869A002DD0E9 /* bun_zipper_res2.ply */; };
 		C28D381919CE869A002DD0E9 /* bun_zipper_res3.ply in Resources */ = {isa = PBXBuildFile; fileRef = C28D381519CE869A002DD0E9 /* bun_zipper_res3.ply */; };
@@ -26,6 +25,7 @@
 		C2B9E9B219FD80D900DF0014 /* Bunny.fs in Resources */ = {isa = PBXBuildFile; fileRef = C2B9E9B119FD80D900DF0014 /* Bunny.fs */; };
 		C2B9E9B419FD8BAF00DF0014 /* Bunny.gs in Resources */ = {isa = PBXBuildFile; fileRef = C2B9E9B319FD8BAF00DF0014 /* Bunny.gs */; };
 		C2B9E9B619FD8EF800DF0014 /* Bunny.vs in Resources */ = {isa = PBXBuildFile; fileRef = C2B9E9B519FD8EF800DF0014 /* Bunny.vs */; };
+		C2C3B5DD1A0E9D5700D88722 /* libCGAL.10.0.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C2C3B5DC1A0E9D5700D88722 /* libCGAL.10.0.4.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -54,7 +54,6 @@
 		C28D37FF19CE7B57002DD0E9 /* VoronoiMeshTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoronoiMeshTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C28D380419CE7B57002DD0E9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C28D380519CE7B57002DD0E9 /* VoronoiMeshTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VoronoiMeshTests.m; sourceTree = "<group>"; };
-		C28D380F19CE7FFD002DD0E9 /* libCGAL.10.0.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.10.0.3.dylib; path = ../../../../opt/local/lib/libCGAL.10.0.3.dylib; sourceTree = "<group>"; };
 		C28D381119CE80C0002DD0E9 /* libply.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libply.a; path = "../../Downloads/ply-1.1/libply.a"; sourceTree = "<group>"; };
 		C28D381419CE869A002DD0E9 /* bun_zipper_res2.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bun_zipper_res2.ply; sourceTree = "<group>"; };
 		C28D381519CE869A002DD0E9 /* bun_zipper_res3.ply */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bun_zipper_res3.ply; sourceTree = "<group>"; };
@@ -67,6 +66,7 @@
 		C2B9E9B119FD80D900DF0014 /* Bunny.fs */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = Bunny.fs; sourceTree = "<group>"; };
 		C2B9E9B319FD8BAF00DF0014 /* Bunny.gs */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = Bunny.gs; sourceTree = "<group>"; };
 		C2B9E9B519FD8EF800DF0014 /* Bunny.vs */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = Bunny.vs; sourceTree = "<group>"; };
+		C2C3B5DC1A0E9D5700D88722 /* libCGAL.10.0.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.10.0.4.dylib; path = ../../../../opt/local/lib/libCGAL.10.0.4.dylib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,8 +74,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C2C3B5DD1A0E9D5700D88722 /* libCGAL.10.0.4.dylib in Frameworks */,
 				C28D381219CE80C0002DD0E9 /* libply.a in Frameworks */,
-				C28D381019CE7FFD002DD0E9 /* libCGAL.10.0.3.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,8 +92,8 @@
 		C28D37DB19CE7B56002DD0E9 = {
 			isa = PBXGroup;
 			children = (
+				C2C3B5DC1A0E9D5700D88722 /* libCGAL.10.0.4.dylib */,
 				C28D381119CE80C0002DD0E9 /* libply.a */,
-				C28D380F19CE7FFD002DD0E9 /* libCGAL.10.0.3.dylib */,
 				C28D37E619CE7B57002DD0E9 /* VoronoiMesh */,
 				C28D380219CE7B57002DD0E9 /* VoronoiMeshTests */,
 				C28D37E519CE7B57002DD0E9 /* Products */,

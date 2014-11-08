@@ -397,6 +397,19 @@ void ModelPreprocessor::insertInterval(CandidateInterval&& i, const CGAL::Point_
         i2Iter = deleteInterval(i1Iter, edgeIntervals);
     }
 
+    // The interval we're trying to insert is worse and entirely inside of of the neighbors
+    auto insertedDistace = i.d + std::sqrt((i.frontierPoint() - i.rBar).squared_length());
+    if (i1Iter != edgeIntervals.end()) {
+        auto i1Distance = i1Iter->d + std::sqrt((i1Iter->frontierPoint() - i1Iter->rBar).squared_length());
+        if (i.a > i1Iter->a && i.b < i1Iter->b && i1Distance < insertedDistace)
+            return;
+    }
+    if (i2Iter != edgeIntervals.end()) {
+        auto i2Distance = i2Iter->d + std::sqrt((i2Iter->frontierPoint() - i2Iter->rBar).squared_length());
+        if (i.a > i2Iter->a && i.b < i2Iter->b && i2Distance < insertedDistace)
+            return;
+    }
+
     // FIXME: Deal with trying to insert a dominated interval. Maybe this won't happen?
     if (i1Iter != edgeIntervals.end())
         trimAtTiePoint(*i1Iter, i, &CandidateInterval::a, &CandidateInterval::b);
@@ -602,7 +615,6 @@ public:
             return;
         for (++facetCirculator; facetCirculator != opposite->facet_begin(); ++facetCirculator) {
             Polyhedron::Halfedge_const_handle halfedge = facetCirculator;
-            std::cout << i.halfedge - modelPreprocessor.polyhedron.halfedges_begin() << " " << halfedge - modelPreprocessor.polyhedron.halfedges_begin() << std::endl;
             if (auto ii = modelPreprocessor.project(i, halfedge)) {
                 assert(halfedge != i.halfedge && ii->halfedge == halfedge);
                 modelPreprocessor.insertInterval(std::move(*ii), i.rBar, modelPreprocessor.halfedgeIntervalMap.emplace(halfedge, std::set<CandidateInterval>()).first->second);
@@ -677,8 +689,6 @@ void ModelPreprocessor::preprocessModel() {
     }
 
     while (!eventQueue.empty()) {
-        //for (auto& i : eventQueue)
-        //    std::cout << "Event queue: " << boost::apply_visitor(Printer(*this), *i.eventData) << std::endl;
         auto eventIter = eventQueue.begin();
         const auto& event = permanentLabels.emplace(eventIter->eventData, eventIter->label).first->first;
         boost::apply_visitor(EventLoopEventVisitor(*this), *event);

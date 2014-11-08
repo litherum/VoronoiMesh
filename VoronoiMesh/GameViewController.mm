@@ -42,7 +42,7 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
         std::vector<InitialPoint> initialPoints;
         Polyhedron::Facet_const_handle facet = model.facets_begin();
         initialPoints.push_back(InitialPoint(facet, facetCenter(facet)));
-        //preprocessModel(model, initialPoints);
+        preprocessModel(model, initialPoints);
     }
 
     // create a new scene
