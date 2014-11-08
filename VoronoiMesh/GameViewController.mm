@@ -17,6 +17,7 @@
 
 @implementation GameViewController {
     GLuint glBuffer;
+    GLuint glTexture;
 }
 
 static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
@@ -34,16 +35,48 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
     NSLog(@"Program error: %@", error);
 }
 
+template <typename T>
+void serialize(std::vector<uint8_t>& result, T x) {
+    const uint8_t* px = reinterpret_cast<const uint8_t*>(&x);
+    result.insert(result.end(), px, px + sizeof(x));
+}
+
+std::vector<uint8_t> serializeDistances(const Distances& distances, const Polyhedron& model) {
+    std::vector<uint8_t> serializedVertexDistances;
+    std::vector<uint8_t> serializedIntervalDistances;
+    std::vector<uint8_t> result;
+    for (const auto& i : distances.first) {
+        serialize(serializedVertexDistances, static_cast<unsigned int>(i.first - model.vertices_begin()));
+        serialize(serializedVertexDistances, i.second);
+    }
+    for (const auto& i : distances.second) {
+        serialize(serializedIntervalDistances, static_cast<unsigned int>(i.first->vertex() - model.vertices_begin()));
+        serialize(serializedIntervalDistances, static_cast<unsigned int>(i.first->opposite()->vertex() - model.vertices_begin()));
+        serialize(serializedIntervalDistances, i.second.a);
+        serialize(serializedIntervalDistances, i.second.b);
+        serialize(serializedIntervalDistances, i.second.rBar.x());
+        serialize(serializedIntervalDistances, i.second.rBar.y());
+        serialize(serializedIntervalDistances, i.second.rBar.z());
+        serialize(serializedIntervalDistances, i.second.d);
+    }
+
+    NSLog(@"%lu", serializedVertexDistances.size());
+    serialize(result, static_cast<unsigned int>(serializedVertexDistances.size()));
+    serialize(result, static_cast<unsigned int>(serializedIntervalDistances.size()));
+    result.insert(result.end(), serializedVertexDistances.begin(), serializedVertexDistances.end());
+    result.insert(result.end(), serializedIntervalDistances.begin(), serializedIntervalDistances.end());
+    return result;
+}
+
 -(void)awakeFromNib
 {
     const Polyhedron model = buildModel(std::string([[[NSBundle mainBundle] pathForResource:@"bun_zipper" ofType:@"ply"] UTF8String]));
 
-    {
-        std::vector<InitialPoint> initialPoints;
-        Polyhedron::Facet_const_handle facet = model.facets_begin();
-        initialPoints.push_back(InitialPoint(facet, facetCenter(facet)));
-        preprocessModel(model, initialPoints);
-    }
+    std::vector<InitialPoint> initialPoints;
+    Polyhedron::Facet_const_handle facet = model.facets_begin();
+    initialPoints.push_back(InitialPoint(facet, facetCenter(facet)));
+    const auto distances = preprocessModel(model, initialPoints);
+    auto serializedDistances = serializeDistances(distances, model);
 
     // create a new scene
     SCNScene *scene = [SCNScene scene];
@@ -148,10 +181,9 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
     bunnyMaterial.program = bunnyProgram;
     [bunnyMaterial handleBindingOfSymbol:@"dummy" usingBlock:^(unsigned int programID, unsigned int location, SCNNode *renderedNode, SCNRenderer *renderer) {
         assert(glIsBuffer(glBuffer));
-        GLuint blockIndex = glGetUniformBlockIndex(programID, "DataStructureBlock");
-        const GLuint blockBinding = 1;
-        glUniformBlockBinding(programID, blockIndex, blockBinding);
-        glBindBufferBase(GL_UNIFORM_BUFFER, blockBinding, glBuffer);
+        assert(glIsTexture(glTexture));
+
+        glUniform1ui(glGetUniformLocation(programID, "dataStructureTexture"), glTexture);
         glUniform1f(location, 0.0f);
     }];
 
@@ -175,20 +207,33 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
 
     {
         [self.gameView.openGLContext makeCurrentContext];
+        
+        static_assert(std::is_same<float, GLfloat>::value, "Should be able to upload floats to OpenGL");
+        static_assert(std::is_same<unsigned int, GLuint>::value, "Should be able to upload unsigned ints to OpenGL");
+        static_assert(std::is_same<int, GLint>::value, "Should be able to upload ints to OpenGL");
 
         GLint maxUniformBlockSize;
         glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &maxUniformBlockSize);
         NSLog(@"Maximum uniform block size: %d Minimum in spec: 16384", maxUniformBlockSize);
+        GLint maxBufferTextureSize;
+        glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &maxBufferTextureSize);
+        NSLog(@"Maximum buffer texture size: %d Minimum in spec: 65536", maxBufferTextureSize);
+
+        auto serializedDistancesSize = serializedDistances.size();
+        assert(maxBufferTextureSize >= serializedDistancesSize);
+        NSLog(@"Serialized data size: %lu", serializedDistancesSize);
 
         glGenBuffers(1, &glBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, glBuffer);
-        std::vector<GLfloat> localBuffer;
-        for (unsigned i = 0; i < 16384; ++i)
-            localBuffer.push_back(0);
-        glBufferData(GL_UNIFORM_BUFFER, localBuffer.size() * sizeof(GLfloat), localBuffer.data(), GL_DYNAMIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, serializedDistancesSize, serializedDistances.data(), GL_DYNAMIC_DRAW);
+
+        glGenTextures(1, &glTexture);
+        glBindTexture(GL_TEXTURE_BUFFER, glTexture);
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, glBuffer);
 
         assert(glGetError() == GL_NO_ERROR);
         assert(glIsBuffer(glBuffer));
+        assert(glIsTexture(glTexture));
     }
 
     // set the scene to the view
@@ -206,7 +251,9 @@ static CGAL::Point_3<Kernel> facetCenter(Polyhedron::Facet_const_handle facet) {
 
 - (void)dealloc {
     if (glBuffer)
-        glDeleteTextures(1, &glBuffer);
+        glDeleteBuffers(1, &glBuffer);
+    if (glTexture)
+        glDeleteTextures(1, &glTexture);
 }
 
 @end

@@ -11,6 +11,7 @@
 
 #include "ModelBuilder.h"
 
+#include <map>
 #include <vector>
 
 struct InitialPoint {
@@ -23,6 +24,24 @@ struct InitialPoint {
     CGAL::Point_3<Kernel> point;
 };
 
-void preprocessModel(const Polyhedron&, const std::vector<InitialPoint>& initialPoints);
+struct IntervalDistancesValue {
+    IntervalDistancesValue(float a, float b, CGAL::Point_3<Kernel> rBar, float d)
+        : a(a)
+        , b(b)
+        , rBar(rBar)
+        , d(d)
+    {
+    }
+    float a;
+    float b;
+    CGAL::Point_3<Kernel> rBar;
+    float d;
+};
+
+typedef std::map<Polyhedron::Vertex_const_handle, float> VertexDistances;
+typedef std::multimap<Polyhedron::Halfedge_const_handle, IntervalDistancesValue> IntervalDistances;
+typedef std::pair<VertexDistances, IntervalDistances> Distances;
+
+Distances preprocessModel(const Polyhedron&, const std::vector<InitialPoint>& initialPoints);
 
 #endif /* defined(__VoronoiMesh__DistanceSolver__) */

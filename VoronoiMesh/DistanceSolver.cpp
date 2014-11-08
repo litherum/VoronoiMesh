@@ -95,19 +95,19 @@ struct Event {
 
 class ModelPreprocessor {
 public:
-    ModelPreprocessor(const Polyhedron&, const std::vector<InitialPoint>&);
-    void preprocessModel();
+    ModelPreprocessor(const std::vector<InitialPoint>&);
+    Distances preprocessModel();
 private:
     class PropagateVisitor;
     class EventLoopEventVisitor;
-    class Printer;
+    //class Printer;
+    class DistancesWriter;
 
     void insertInterval(CandidateInterval&&, const CGAL::Point_3<Kernel>& c, std::set<CandidateInterval>& edgeIntervals);
     std::set<CandidateInterval>::iterator deleteInterval(std::set<CandidateInterval>::iterator, std::set<CandidateInterval>& edgeIntervals);
     void propagate(const std::set<CandidateInterval>::iterator);
     boost::optional<CandidateInterval> project(const CandidateInterval& i, Polyhedron::Halfedge_const_handle ii) const;
 
-    const Polyhedron& polyhedron;
     const std::vector<InitialPoint>& initialPoints;
     std::map<Polyhedron::Halfedge_const_handle, std::set<CandidateInterval>> halfedgeIntervalMap;
     std::set<Event> eventQueue;
@@ -129,9 +129,8 @@ CGAL::Point_3<Kernel> CandidateInterval::frontierPoint() const {
     return boost::apply_visitor(FrontierPointVisitor(), c);
 }
 
-ModelPreprocessor::ModelPreprocessor(const Polyhedron& polyhedron, const std::vector<InitialPoint>& initialPoints)
-    : polyhedron(polyhedron)
-    , initialPoints(initialPoints)
+ModelPreprocessor::ModelPreprocessor(const std::vector<InitialPoint>& initialPoints)
+    : initialPoints(initialPoints)
 {
 }
 
@@ -656,6 +655,7 @@ private:
     ModelPreprocessor& modelPreprocessor;
 };
 
+/*
 class ModelPreprocessor::Printer : public boost::static_visitor<std::string> {
 public:
     Printer(ModelPreprocessor& modelPreprocessor)
@@ -676,8 +676,34 @@ public:
 private:
     ModelPreprocessor& modelPreprocessor;
 };
+*/
 
-void ModelPreprocessor::preprocessModel() {
+class ModelPreprocessor::DistancesWriter : public boost::static_visitor<> {
+public:
+    DistancesWriter(VertexDistances& vertexDistances, IntervalDistances& intervalDistances, float distance)
+        : vertexDistances(vertexDistances)
+        , intervalDistances(intervalDistances)
+        , distance(distance)
+    {
+    }
+    
+    void operator()(std::set<CandidateInterval>::iterator candidateInterval) const {
+        const auto& interval = *candidateInterval;
+        // FIXME: rBar might need to be unfolded to the opposite facet
+        intervalDistances.insert(std::make_pair(interval.halfedge, IntervalDistancesValue(interval.a, interval.b, interval.rBar, interval.d)));
+    }
+    
+    void operator()(Polyhedron::Vertex_const_handle vertex) const {
+        vertexDistances.insert(std::make_pair(vertex, distance));
+    }
+    
+private:
+    VertexDistances& vertexDistances;
+    IntervalDistances& intervalDistances;
+    float distance;
+};
+
+Distances ModelPreprocessor::preprocessModel() {
     for (const auto& initialPoint : initialPoints) {
         auto facetCirculator = initialPoint.facet->facet_begin();
         do {
@@ -694,8 +720,15 @@ void ModelPreprocessor::preprocessModel() {
         boost::apply_visitor(EventLoopEventVisitor(*this), *event);
         eventQueue.erase(eventIter);
     }
+
+    VertexDistances vertexDistances;
+    IntervalDistances intervalDistances;
+    for (auto i = permanentLabels.begin(); i != permanentLabels.end(); ++i) {
+        boost::apply_visitor(DistancesWriter(vertexDistances, intervalDistances, i->second), *i->first);
+    }
+    return std::make_pair(vertexDistances, intervalDistances);
 }
 
-void preprocessModel(const Polyhedron& polyhedron, const std::vector<InitialPoint>& initialPoints) {
-    ModelPreprocessor(polyhedron, initialPoints).preprocessModel();
+Distances preprocessModel(const Polyhedron& polyhedron, const std::vector<InitialPoint>& initialPoints) {
+    return ModelPreprocessor(initialPoints).preprocessModel();
 }
