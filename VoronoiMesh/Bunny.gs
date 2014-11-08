@@ -12,7 +12,6 @@ uniform samplerBuffer dataStructureTexture;
 in int gs_vertexID[];
 
 flat out vec4 fs_color;
-out vec4 fs_position;
 
 void main() {
     fs_color = vec4(1.0, 0.0, 0.0, 1.0);
@@ -46,11 +45,8 @@ void main() {
     }
 */
 
-    vec3 n = normalize(cross(gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz, gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz));
     for (uint i = 0; i < 3; ++i) {
-        gl_Position = mvpMatrix * (gl_in[i].gl_Position + vec4(dummy * n, 0.0));
-        gl_PrimitiveID = gl_PrimitiveIDIn;
-        fs_position = gl_in[i].gl_Position;
+        gl_Position = mvpMatrix * (gl_in[i].gl_Position + vec4(dummy, 0.0, 0.0, 0.0));
         EmitVertex();
     }
     EndPrimitive();
